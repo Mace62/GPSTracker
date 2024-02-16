@@ -9,14 +9,11 @@
     <div>
         <label for="username">Username</label>
         <input type="text" id="username" name="username" required>
-        {% for error in form.username.errors %}
-        <span style="color: red;">{{ error }}</span><br>
-        {% endfor %}
     </div>
     <div>
         <label for="email">Email</label>
         <input type="text" id="email" name="email" required>
-        {% for error in form.username.errors %}
+        {% for error in form.email.errors %}
         <span style="color: red;">{{ error }}</span><br>
         {% endfor %}
     </div>

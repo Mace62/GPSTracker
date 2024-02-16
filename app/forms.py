@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField
-from wtforms.validators import DataRequired, ValidationError
+from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField
+from wtforms.validators import DataRequired, ValidationError, Email
 
 class LoginForm(FlaskForm):
     username = TextAreaField('Username', validators=[DataRequired()])
@@ -10,9 +10,10 @@ class LoginForm(FlaskForm):
 class RegisterForm(FlaskForm):
     username = TextAreaField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
+    confirm = PasswordField('Confirm Password', validators=[DataRequired()])
     first_name = TextAreaField('First Name', validators=[DataRequired()])
     last_name = TextAreaField('Last Name', validators=[DataRequired()])
-    email = TextAreaField('Email', validators=[DataRequired()])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
 
     def validate_password(form, field):
         password = field.data
