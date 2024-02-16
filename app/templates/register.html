@@ -9,10 +9,16 @@
     <div>
         <label for="username">Username</label>
         <input type="text" id="username" name="username" required>
+        {% for error in form.username.errors %}
+        <span style="color: red;">{{ error }}</span><br>
+        {% endfor %}
     </div>
     <div>
         <label for="email">Email</label>
         <input type="text" id="email" name="email" required>
+        {% for error in form.username.errors %}
+        <span style="color: red;">{{ error }}</span><br>
+        {% endfor %}
     </div>
     <div>
         <label for="first_name">First name</label>
@@ -25,10 +31,13 @@
     <div>
         <label for="password">Password</label>
         <input type="password" id="password" name="password" required>
+        {% for error in form.password.errors %}
+        <span style="color: red;">{{ error }}</span><br>
+        {% endfor %}
     </div>
     <div>
-        <label for="confirm_password">Confirm Password</label>
-        <input type="password" id="confirm_password" name="confirm_password" required>
+        <label for="confirm">Confirm Password</label>
+        <input type="password" id="confirm" name="confirm" required>
     </div>
     <div>
         <button type="submit">Register</button>

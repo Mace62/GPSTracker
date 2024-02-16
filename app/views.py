@@ -25,7 +25,11 @@ def register():
             if models.User.query.filter_by(
                     email=form.email.data).first():
                 flash("Email exists, try a different email")
-                return render_template('register.html', form=form)            
+                return render_template('register.html', form=form)  
+
+            if form.password.data != form.confirm.data:
+                flash("Passwords do not match")
+                return render_template('register.html', form=form)          
 
             # hash password and assign ID to new user
             num_ids = models.User.query.count()
