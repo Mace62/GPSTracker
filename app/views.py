@@ -2,36 +2,27 @@ from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for
 from app.forms import LoginForm, RegisterForm
-from flask_login import LoginManager, login_user
-from flask_login import logout_user, UserMixin, current_user, login_required
-import bcrypt
+from flask_bcrypt import Bcrypt
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
-
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
+bcrypt = Bcrypt(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-class User(UserMixin):
-    def __init__(self, username):
-        self.username = username
-
-    def get_id(self):
-        return self.username
-
 
 @login_manager.user_loader
 def load_user(user_id):
-    return models.User.query.filter_by(username=user_id).first()
+    return models.User.query.get(int(user_id))
+
 
 @app.route('/')
+@login_required
 def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    else:
-        return redirect(url_for('login'))
+    return render_template('index.html')
 
 @app.route('/logout')
 @login_required
@@ -59,21 +50,17 @@ def register():
                 flash("Passwords do not match")
                 return render_template('register.html', form=form)          
 
-            # hash password and assign ID to new user
-            num_ids = models.User.query.count()
-            hashed_password = bcrypt.hashpw(
-                form.password.data.encode('utf-8'), bcrypt.gensalt())
-            new_user = models.User(id=num_ids+1,
-                                       username=form.username.data,
+            # hash password
+            hashed_password = bcrypt.generate_password_hash(form.password.data)
+            new_user = models.User(username=form.username.data,
                                        password=hashed_password,
                                        firstname=form.first_name.data,
                                        lastname=form.last_name.data,
                                        email=form.email.data)
             db.session.add(new_user)
             db.session.commit()
+            login_user(new_user)
             flash("Registered and logged in successfully.")
-            user_obj = User(new_user.username)
-            login_user(user_obj)
             return redirect(url_for('index'))
         except Exception as e:
             flash(f"Error: {e}")
@@ -83,31 +70,19 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-
-    # if login button is clicked
     if form.validate_on_submit():
-        try:
-            user = models.User.query.filter_by(
-                username=form.username.data).first()
+        user = models.User.query.filter_by(username=form.username.data).first()
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            if models.Admin.query.filter_by(user_id=user.id).first():
+                login_user(user)
+                flash('Logged in as admin')
+                return redirect(url_for('admin'))   
+            login_user(user)
+            return redirect(url_for('index'))
+        else:
+            flash('Incorrect username or password. Please try again.', 'danger')
 
-            # hashes password input, compared to db
-            if user and bcrypt.checkpw(
-                    form.password.data.encode('utf-8'), user.password):
-                if models.Admin.query.filter_by(user_id=user.id).first():
-                    flash("Logged in as admin!")
-                    user_obj = User(user.username)
-                    login_user(user_obj)
-                    return redirect(url_for('admin'))
-                flash("Logged in successfully!")
-                user_obj = User(user.username)
-                login_user(user_obj)
-                return redirect(url_for('index'))
-            else:
-                flash("Incorrect username or password")
-        except Exception as e:
-            flash(f"Error: {e}")
-
-    return render_template('login.html', form=form)
+    return render_template('login.html', title="Login", form=form)
 
 @app.route('/admin')
 @login_required
