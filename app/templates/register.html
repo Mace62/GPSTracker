@@ -1,46 +1,56 @@
-{% extends "base.html" %}
+{% extends "reg_login_base.html" %}
+
+{% block title %}Register{% endblock %}
+
 {% block content %}
-
-<h1>Register</h1>
-
-<form action="" method="post" name="Register">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    {{ form.csrf }}
-    <div>
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
+<h1 class="card-title text-center">Registration Page</h1>
+<!-- Display flashed messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert {% if category == 'danger' %}alert-danger{% else %}alert-success{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+<form method="POST" action="">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.username.label(class="form-control-label") }}
+        {{ form.username(class="form-control", maxlength=15) }}
     </div>
-    <div>
-        <label for="email">Email</label>
-        <input type="text" id="email" name="email" required>
+    <div class="form-group">
+        {{ form.email.label(class="form-control-label") }}
+        {{ form.email(class="form-control") }}
         {% for error in form.email.errors %}
         <span style="color: red;">{{ error }}</span><br>
         {% endfor %}
     </div>
-    <div>
-        <label for="first_name">First name</label>
-        <input type="text" id="first_name" name="first_name" required>
+    <div class="form-group">
+        {{ form.first_name.label(class="form-control-label") }}
+        {{ form.first_name(class="form-control", maxlength=50) }}
     </div>
-    <div>
-        <label for="last_name">Last name</label>
-        <input type="text" id="last_name" name="last_name" required>
+    <div class="form-group">
+        {{ form.last_name.label(class="form-control-label") }}
+        {{ form.last_name(class="form-control", maxlength=50) }}
     </div>
-    <div>
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+    <div class="form-group">
+        {{ form.password.label(class="form-control-label") }}
+        {{ form.password(class="form-control") }}
         {% for error in form.password.errors %}
         <span style="color: red;">{{ error }}</span><br>
         {% endfor %}
     </div>
-    <div>
-        <label for="confirm">Confirm Password</label>
-        <input type="password" id="confirm" name="confirm" required>
+    <div class="form-group">
+        {{ form.confirm.label(class="form-control-label") }}
+        {{ form.confirm(class="form-control", id="confirm", required=True) }}
     </div>
-    <div>
-        <button type="submit">Register</button>
+    <div class="form-group text-center">
+        {{ form.submit(class="btn btn-primary submit-button") }}
     </div>
 </form>
-
-<a  href="/login"><button type="submit" class="btn btn-lg btn-block btn-dark btn-submit">Have an account? Log in here</button></a>
-
+<p class="text-center">
+    <a href="{{ url_for('login') }}">Already have an account? Log In</a>
+</p>
 {% endblock %}
