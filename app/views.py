@@ -28,6 +28,7 @@ def index():
 @login_required
 def logout():
     logout_user()
+    flash('You have been logged out.')
     return redirect(url_for('login'))
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -38,16 +39,16 @@ def register():
         try:
             if models.User.query.filter_by(
                     username=form.username.data).first():
-                flash("Username exists, try a different name")
+                flash("Username exists, try a different name.")
                 return render_template('register.html', form=form)
             
             if models.User.query.filter_by(
                     email=form.email.data).first():
-                flash("Email exists, try a different email")
+                flash("Email exists, try a different email.")
                 return render_template('register.html', form=form)  
 
             if form.password.data != form.confirm.data:
-                flash("Passwords do not match")
+                flash("Passwords do not match.")
                 return render_template('register.html', form=form)          
 
             # hash password
@@ -78,6 +79,7 @@ def login():
                 flash('Logged in as admin')
                 return redirect(url_for('admin'))   
             login_user(user)
+            flash('Logged in successfully.')
             return redirect(url_for('index'))
         else:
             flash('Incorrect username or password. Please try again.', 'danger')

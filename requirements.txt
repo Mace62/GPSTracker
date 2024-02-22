@@ -17,6 +17,7 @@ Flask-Login==0.5.0
 Flask-Mail==0.9.1
 Flask-Migrate==4.0.1
 Flask-SQLAlchemy==2.5.1
+Flask-Testing==0.8.1
 Flask-WhooshAlchemy==0.56
 Flask-WTF==1.0.1
 greenlet==2.0.2

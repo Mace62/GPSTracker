@@ -67,6 +67,326 @@ class TestRegistration(TestCase):
         self.assertIsNotNone(user)
         self.assertEqual(user.username, 'testuser')
 
+class TestLogin(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+        # Create a test user for login
+        hashed_password = bcrypt.generate_password_hash("Testpassword!")
+        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
+        db.session.add(test_user)
+        db.session.commit()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_login(self):
+        """Test user login."""
+        # Register a user
+        response = self.client.post('/login', data=dict(
+            username='testuser',
+            password='Testpassword!'), follow_redirects=True)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'Logged in successfully.', response.data)
+        
+class TestWrongLogin(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+        # Create a test user for login
+        hashed_password = bcrypt.generate_password_hash("Testpassword!")
+        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
+        db.session.add(test_user)
+        db.session.commit()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_wronglogin(self):
+        """Test invalid user login."""
+        # Register a user
+        response = self.client.post('/login', data=dict(
+            username='testuser',
+            password='Wrongpassword!'), follow_redirects=True)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'Incorrect username or password. Please try again.', response.data)
+
+
+class TestLogout(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+        # Create a test user for login
+        hashed_password = bcrypt.generate_password_hash("Testpassword!")
+        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
+        db.session.add(test_user)
+        db.session.commit()
+
+        # Log in the test user
+        response = self.client.post('/login', data=dict(
+            username='testuser',
+            password='Testpassword!'
+        ), follow_redirects=True)
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_logout(self):
+        """Test user logout."""
+        response = self.client.get('/logout', follow_redirects=True)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'You have been logged out.', response.data)
+        
+class TestEmailInUse(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+        # create a user
+        hashed_password = bcrypt.generate_password_hash("Testpassword!")
+        test_user = User(username='testuser', firstname='t', lastname='t', email='example@example.com',password=hashed_password)
+        db.session.add(test_user)
+        db.session.commit()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_email_in_use(self):
+        """Test invalid registration via already-in-use email."""
+
+        # create another user with the same email
+        response = self.client.post('/register', data=dict(
+            username='testuser1',
+            password='Testpassword!',
+            confirm='Testpassword!',
+            email='example@example.com',
+            first_name='Test',
+            last_name='User'
+        ), follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'Email exists, try a different email.', response.data)
+        
+class TestNameInUse(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+        # create a user
+        hashed_password = bcrypt.generate_password_hash("Testpassword!")
+        test_user = User(username='testuser', firstname='t', lastname='t', email='example@example.com',password=hashed_password)
+        db.session.add(test_user)
+        db.session.commit()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_name_in_use(self):
+        """Test invalid registration via already-in-use username."""
+
+        # create another user with the same username
+        response = self.client.post('/register', data=dict(
+            username='testuser',
+            password='Testpassword!',
+            confirm='Testpassword!',
+            email='example1@example.com',
+            first_name='Test',
+            last_name='User'
+        ), follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'Username exists, try a different name.', response.data)
+
+class TestNoSpecialCharPassword(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_no_special_char(self):
+        """Test invalid registration via poor password (no special character)."""
+
+        # create a user with a password that has no special characters
+        response = self.client.post('/register', data=dict(
+            username='testuser',
+            password='Password',
+            confirm='Password',
+            email='example1@example.com',
+            first_name='Test',
+            last_name='User'
+        ), follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'Password must contain at least one special character.', response.data)   
+
+class TestNoCapsPassword(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_no_caps(self):
+        """Test invalid registration via poor password (no capital letter)."""
+
+        # create a user with a password that has no capital letters
+        response = self.client.post('/register', data=dict(
+            username='testuser',
+            password='password!',
+            confirm='password!',
+            email='example1@example.com',
+            first_name='Test',
+            last_name='User'
+        ), follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'Password must contain at least one capital letter.', response.data)
+        
+class TestInvalidLengthPassword(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_invalid_length(self):
+        """Test invalid registration via poor password (not at least 8 characters)."""
+
+        # create a user with a password that is too short
+        response = self.client.post('/register', data=dict(
+            username='testuser',
+            password='Passwo!',
+            confirm='Passwo!',
+            email='example1@example.com',
+            first_name='Test',
+            last_name='User'
+        ), follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'Password must be at least 8 characters long.', response.data)
+        
+class TestPasswordsMismatch(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_password_mismatch(self):
+        """Test invalid registration via poor password (Passwords don't match)."""
+
+        # create a user with mismatching passwords
+        response = self.client.post('/register', data=dict(
+            username='testuser',
+            password='Password!',
+            confirm='Passsword!',
+            email='example1@example.com',
+            first_name='Test',
+            last_name='User'
+        ), follow_redirects=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'Passwords do not match.', response.data)
+
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestWrongLogin))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogout))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestEmailInUse))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNameInUse))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
     unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
