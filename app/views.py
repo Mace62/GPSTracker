@@ -1,15 +1,11 @@
 from flask import *
-<<<<<<< HEAD
-from app import app
-from flask import render_template, flash, request
-import stripe
-=======
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for
 from app.forms import LoginForm, RegisterForm
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
+import stripe
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -23,26 +19,39 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return models.User.query.get(int(user_id))
 
->>>>>>> d8dafae520d17f49b2a29d4f744edf41acb9f287
 
 @app.route('/')
 @login_required
 def index():
     return render_template('index.html')
 
-<<<<<<< HEAD
 
 
 ####    THIS IS TEST CODE FOR THE STIRPE API IMPLEMENTATION     ####
 
 @app.route('/charge', methods=['GET', 'POST'])
 def charge():
-    # Retrieve payment information from the request
-    amount = request.form['amount']
-    token = request.form['stripeToken']
+
+    # Going to make a mock customer to use for the stripe payment 
+    customer = stripe.Customer.create(
+        name = "Muhammad Kashif-Khan",
+        email = "sc22makk@leeds.ac.uk"
+    )
+
+    # Creating a subscription object
+    # Will match the entities on the Stripe website using a price ID tag
+    subscription_weekly = stripe.Subscription.create(
+        customer = customer.id,
+        items = [
+            {
+                price = "price_1OnnSpAu65yEau3hfP2yBSke"
+            }
+        ]
+    )
 
     try:
         # Create a charge using the Stripe library
+        stripe.
         charge = stripe.Charge.create(
             amount=amount,
             currency='gbp',
@@ -54,7 +63,8 @@ def charge():
     except stripe.error.CardError as e:
         # Handle card errors
         return str(e), 403
-=======
+
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -121,4 +131,3 @@ def login():
 @login_required
 def admin():
     return render_template('admin.html')
->>>>>>> d8dafae520d17f49b2a29d4f744edf41acb9f287
