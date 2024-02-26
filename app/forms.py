@@ -29,3 +29,6 @@ class RegisterForm(FlaskForm):
         
         if not any(char.isupper() for char in password):
             raise ValidationError('Password must contain at least one capital letter.')
+        
+# class PaymentForm(FlaskForm):
+#     submit = Submit 
