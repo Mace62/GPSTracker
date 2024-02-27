@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<title>Select Payment Option</title>
+<body>
+    <h2>Please select a payment option to use the GPX Webpage</h2>
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+            <form id="PaymentForm" action="/payment" method="post" role="form" name="payment">
+                {{ form.hidden_tag() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ form.csrf }}
+                <button id="weekly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Weekly Subscription</button>
+                <button id="monthly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Monthly Subscription</button>
+                <button id="yearly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Yearly Subscription</button>
+            </form>
+</body>
+
+{% endblock %}

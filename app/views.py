@@ -1,14 +1,14 @@
 from flask import *
 from app import app, models, db
-from flask import render_template, flash, request, redirect, url_for
-from app.forms import LoginForm, RegisterForm
+from flask import render_template, flash, request, redirect, url_for, jsonify
+from app.forms import LoginForm, RegisterForm, EmptyForm
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
 import os
 import stripe
 
-# app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['SECRET_KEY'] = 'your_secret_key'
 
 # Setting global secret key for Stripe API
 stripe.api_key = "sk_test_51OlhekAu65yEau3hdrHvRwjs8vb8GM2NJnjLuJQYuGHeqgi5nYseoo8D2jIE4qKCvs7EPhzQIOJfQKQUej6SYD0600PGbY7CmA"
@@ -34,14 +34,14 @@ def index():
 #### Need a page to land on to select what the user wants to pay ####
 @app.route('/select_payment', methods=['GET', 'POST'])
 def select_payment():
-    return render_template("pay.html")
+    form = EmptyForm()
+    return render_template("/select_payment.html", form=form)
 
 
 ####    THIS IS TEST CODE FOR THE STIRPE API IMPLEMENTATION     ####
 
 @app.route('/payment', methods=['GET', 'POST'])
 @login_required
-
 def checkout_session():
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -55,8 +55,6 @@ def checkout_session():
             success_url = request.url + "/success.html",
             cancel_url = request.url + "/aborted.html"
         )
-
-        print(request.url)
 
     except Exception as e:
         return str(e)
