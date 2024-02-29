@@ -49,4 +49,4 @@ class GPXPoint:
         self.time = time
 
     def display_info(self):
-        print(f"    Point: {self.name}, Location: ({self.latitude}, {self.longitude}), Elevation: {self.elevation}, Time: {self.time}")
+        print(f"    Point: {self.name}, Location: ({self.latitude}, {self.longitude}), Elevation: {self.elevation}, Time: {self.time}, Description: {self.description}")
