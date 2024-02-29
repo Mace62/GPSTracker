@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField
+from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField, HiddenField
 from wtforms.validators import DataRequired, ValidationError, Email
 
 class LoginForm(FlaskForm):
@@ -35,3 +35,7 @@ class RegisterForm(FlaskForm):
 # It is also being used for testing
 class EmptyForm(FlaskForm):
     pass
+
+# Payment form to get preferred payment option
+class PaymentForm(FlaskForm):
+    payment_option = HiddenField('selected_option')

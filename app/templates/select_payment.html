@@ -2,18 +2,48 @@
 
 {% block content %}
 
+
+
+<!-- HTML side. Has 3 buttons to select payment options from -->
+<!-- Has not been formatted to correct spec -->
 <title>Select Payment Option</title>
 <body>
     <h2>Please select a payment option to use the GPX Webpage</h2>
         <meta name="csrf-token" content="{{ csrf_token() }}">
-            <form id="PaymentForm" action="/payment" method="post" role="form" name="payment">
+            <form id="PaymentForm" action="/payment" method="post" role="form" name="payment_option">
                 {{ form.hidden_tag() }}
+                <input type="hidden" id="selected_option" name="selected_option">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {{ form.csrf }}
-                <button id="weekly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Weekly Subscription</button>
-                <button id="monthly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Monthly Subscription</button>
-                <button id="yearly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Yearly Subscription</button>
+                <div class="form-group">
+                    <button id="weekly" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Weekly Subscription</button>
+                    <button id="monthly" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Monthly Subscription</button>
+                    <button id="yearly" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Yearly Subscription</button>
+                </div>
+                
             </form>
 </body>
+
+<script>
+    // Function to update the selected option value
+    function updateSelectedOption(option) {
+        document.getElementById('selected_option').value = option;
+        document.getElementById('PaymentForm').submit(); // Submit the form when an option is selected
+        alert(option);
+    }
+
+    // Add event listeners to buttons
+    document.getElementById("weekly").addEventListener("click", function() {
+        updateSelectedOption("Weekly");
+    });
+
+    document.getElementById("monthly").addEventListener("click", function() {
+        updateSelectedOption("Monthly");
+    });
+
+    document.getElementById("yearly").addEventListener("click", function() {
+        updateSelectedOption("Yearly");
+    });
+</script>
 
 {% endblock %}

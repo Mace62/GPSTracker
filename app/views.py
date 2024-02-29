@@ -1,7 +1,7 @@
 from flask import *
 from app import app, models, db
-from flask import render_template, flash, request, redirect, url_for, jsonify
-from app.forms import LoginForm, RegisterForm, EmptyForm
+from flask import render_template, flash, request, redirect, url_for, session
+from app.forms import LoginForm, RegisterForm, EmptyForm, PaymentForm
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
@@ -12,6 +12,13 @@ app.config['SECRET_KEY'] = 'your_secret_key'
 
 # Setting global secret key for Stripe API
 stripe.api_key = "sk_test_51OlhekAu65yEau3hdrHvRwjs8vb8GM2NJnjLuJQYuGHeqgi5nYseoo8D2jIE4qKCvs7EPhzQIOJfQKQUej6SYD0600PGbY7CmA"
+
+# Setting global dictionary for subscription products and their respective product ID's
+SUBSCRIPTION_PRODUCTS_ID = {
+    "Weekly": "price_1OnnSpAu65yEau3hfP2yBSke",
+    "Monthly": "price_1OnnTpAu65yEau3hCLoW1nZP",
+    "Yearly": "price_1OnpOoAu65yEau3hfk7nCPw1",
+}
 
 bcrypt = Bcrypt(app)
 login_manager = LoginManager()
@@ -34,7 +41,15 @@ def index():
 #### Need a page to land on to select what the user wants to pay ####
 @app.route('/select_payment', methods=['GET', 'POST'])
 def select_payment():
-    form = EmptyForm()
+    form = PaymentForm()
+
+    print(form.payment_option.data)
+    session['selected_option'] = form.payment_option.data
+
+    # if form.validate_on_submit():
+    #     # Store form data in session
+        
+
     return render_template("/select_payment.html", form=form)
 
 
@@ -44,10 +59,20 @@ def select_payment():
 @login_required
 def checkout_session():
     try:
+        # Retrieve form data from session
+        payment_option = session.get('selected_option')
+        if not payment_option:
+            # Redirect user to select a payment option
+            return redirect(url_for('select_payment'))
+
+        # payment_option = request.form.get('payment_option')
+        
+        # print(payment_option)
+
         checkout_session = stripe.checkout.Session.create(
             line_items = [
                 {
-                    "price": "price_1OnnSpAu65yEau3hfP2yBSke",
+                    "price": "price_1OnnSpAu65yEau3hfP2yBSke",               #SUBSCRIPTION_PRODUCTS_ID[payment_option],
                     "quantity": 1
                 }
             ],
@@ -57,9 +82,9 @@ def checkout_session():
         )
 
     except Exception as e:
-        return str(e)
+        return str(e), 403
     
-    return redirect(checkout_session.url, code=3030)
+    return redirect(checkout_session.url, code=303)
 
 
     # # Going to make a mock customer to use for the stripe payment 
