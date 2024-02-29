@@ -5,6 +5,8 @@ from app.forms import LoginForm, RegisterForm
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -90,3 +92,26 @@ def login():
 @login_required
 def admin():
     return render_template('admin.html')
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        # Check if the user is authenticated
+        # Rest of the code...
+
+                if not current_user.is_authenticated:
+                    return redirect(url_for('login'))
+
+                file = request.files['file']
+                if file and file.filename.endswith('.gpx'):
+                    filename = secure_filename(file.filename)
+                    user_id = current_user.id  # Get the current user's ID
+                    user_folder = os.path.join(app.config['/static/uploads/'], str(user_id))
+                    if not os.path.exists(user_folder):
+                        os.makedirs(user_folder)
+                    file.save(os.path.join(user_folder, filename))
+                    flash('File successfully uploaded')
+                    return redirect(url_for('index'))
+                else:
+                    flash('Invalid file type')
+    return render_template('upload.html')
