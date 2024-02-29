@@ -1,6 +1,6 @@
 from flask import *
 from app import app, models, db
-from flask import render_template, flash, request, redirect, url_for
+from flask import render_template, flash, request, redirect, url_for, send_from_directory
 from app.forms import LoginForm, RegisterForm, UploadForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_bcrypt import Bcrypt
@@ -110,3 +110,20 @@ def upload_file():
         flash('File successfully uploaded')
         return redirect(url_for('index'))
     return render_template('upload.html', form=form)
+
+@app.route('/myfiles')
+@login_required
+def list_user_files():
+    user_folder = os.path.join(app.root_path,'static','uploads',str(current_user.id))
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder)
+    files = os.listdir(user_folder)
+    return render_template('list_files.html', files=files)
+
+@app.route('/download/<filename>')
+@login_required
+def download_file(filename):
+    user_folder = os.path.join(app.root_path,'static','uploads',str(current_user.id))
+    if not os.path.exists(os.path.join(user_folder, filename)):
+        return 'File not found', 404
+    return send_from_directory(user_folder, filename, as_attachment=True)
