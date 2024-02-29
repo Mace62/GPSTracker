@@ -10,15 +10,15 @@
 <body>
     <h2>Please select a payment option to use the GPX Webpage</h2>
         <meta name="csrf-token" content="{{ csrf_token() }}">
-            <form id="PaymentForm" action="/payment" method="post" role="form" name="payment_option">
+            <form id="PaymentForm" action="/select_payment" method="post" role="form" name="payment_option">
                 {{ form.hidden_tag() }}
-                <input type="hidden" id="selected_option" name="selected_option">
+                <input type="hidden" id="payment_option" name="payment_option">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {{ form.csrf }}
                 <div class="form-group">
-                    <button id="weekly" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Weekly Subscription</button>
-                    <button id="monthly" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Monthly Subscription</button>
-                    <button id="yearly" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Yearly Subscription</button>
+                    <button id="weekly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Weekly Subscription</button>
+                    <button id="monthly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Monthly Subscription</button>
+                    <button id="yearly" type="submit" class="btn btn-success submit-button" style="background-color: #FFC0CB;">Yearly Subscription</button>
                 </div>
                 
             </form>
@@ -27,7 +27,7 @@
 <script>
     // Function to update the selected option value
     function updateSelectedOption(option) {
-        document.getElementById('selected_option').value = option;
+        document.getElementById('payment_option').value = option;
         document.getElementById('PaymentForm').submit(); // Submit the form when an option is selected
         alert(option);
     }

@@ -39,3 +39,4 @@ class EmptyForm(FlaskForm):
 # Payment form to get preferred payment option
 class PaymentForm(FlaskForm):
     payment_option = HiddenField('selected_option')
+    submit = SubmitField('Submit')

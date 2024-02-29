@@ -41,14 +41,13 @@ def index():
 #### Need a page to land on to select what the user wants to pay ####
 @app.route('/select_payment', methods=['GET', 'POST'])
 def select_payment():
-    form = PaymentForm()
+    form = PaymentForm(request.form)
 
-    print(form.payment_option.data)
-    session['selected_option'] = form.payment_option.data
-
-    # if form.validate_on_submit():
-    #     # Store form data in session
-        
+    if form.validate_on_submit():
+        payment_option = request.form.get('payment_option')
+        session['payment_option'] = payment_option
+        print(form.payment_option)
+        return redirect(url_for('payment'))  # Redirect to the payment route
 
     return render_template("/select_payment.html", form=form)
 
@@ -57,22 +56,18 @@ def select_payment():
 
 @app.route('/payment', methods=['GET', 'POST'])
 @login_required
-def checkout_session():
+def payment():
     try:
         # Retrieve form data from session
-        payment_option = session.get('selected_option')
+        payment_option = session.get('payment_option')
         if not payment_option:
             # Redirect user to select a payment option
             return redirect(url_for('select_payment'))
 
-        # payment_option = request.form.get('payment_option')
-        
-        # print(payment_option)
-
         checkout_session = stripe.checkout.Session.create(
             line_items = [
                 {
-                    "price": "price_1OnnSpAu65yEau3hfP2yBSke",               #SUBSCRIPTION_PRODUCTS_ID[payment_option],
+                    "price": SUBSCRIPTION_PRODUCTS_ID[payment_option],
                     "quantity": 1
                 }
             ],
@@ -85,39 +80,6 @@ def checkout_session():
         return str(e), 403
     
     return redirect(checkout_session.url, code=303)
-
-
-    # # Going to make a mock customer to use for the stripe payment 
-    # customer = stripe.Customer.create(
-    #     name = "Muhammad Kashif-Khan",
-    #     email = "sc22makk@leeds.ac.uk"
-    # )
-
-    # # Creating a subscription object
-    # # Will match the entities on the Stripe website using a price ID tag
-    # subscription_weekly = stripe.Subscription.create(
-    #     customer = customer.id,
-    #     items = [
-    #         {
-    #             price = "price_1OnnSpAu65yEau3hfP2yBSke"
-    #         }
-    #     ]
-    # )
-    # stripe.
-    # # try:
-    # #     # Create a charge using the Stripe library
-    # #     stripe.
-    # #     charge = stripe.Charge.create(
-    # #         amount=amount,
-    # #         currency='gbp',
-    # #         source=token,
-    # #         description='Payment for your service'
-    # #     )
-    # #     # Handle successful payment
-    # #     return 'Payment successful!'
-    # # except stripe.error.CardError as e:
-    # #     # Handle card errors
-    # #     return str(e), 403
 
 
 @app.route('/logout')
