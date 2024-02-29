@@ -3,9 +3,11 @@
 
 {% block content %}
 
-<form method=post enctype=multipart/form-data action="{{ url_for('upload_file') }}">
-    <input type=file name=file>
-    <input type=submit value=Upload>
+<form method="post" enctype="multipart/form-data" action="{{ url_for('upload_file') }}">
+    {{ form.hidden_tag() }}
+    {{ form.file.label }} {{ form.file() }}
+    {{ form.submit() }}
 </form>
+
 
 {% endblock %}

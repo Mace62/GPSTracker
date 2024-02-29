@@ -5,4 +5,4 @@ app/__pycache__/
 migrations
 *.db
 *.log
-```
+/static/uploads/

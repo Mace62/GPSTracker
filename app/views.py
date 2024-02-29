@@ -1,7 +1,8 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for
-from app.forms import LoginForm, RegisterForm
+from app.forms import LoginForm, RegisterForm, UploadForm
+from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
@@ -95,23 +96,17 @@ def admin():
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
-    if request.method == 'POST':
-        # Check if the user is authenticated
-        # Rest of the code...
+    form = UploadForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        file = form.file.data
+        filename = secure_filename(file.filename)
+        user_id = str(current_user.id)  # Get the user's ID
+        upload_folder = os.path.join(app.root_path, 'static', 'uploads', user_id)  # Update the subfolder path
 
-                if not current_user.is_authenticated:
-                    return redirect(url_for('login'))
+        if not os.path.exists(upload_folder):  # Create the subfolder if it doesn't exist
+            os.makedirs(upload_folder)
 
-                file = request.files['file']
-                if file and file.filename.endswith('.gpx'):
-                    filename = secure_filename(file.filename)
-                    user_id = current_user.id  # Get the current user's ID
-                    user_folder = os.path.join(app.config['/static/uploads/'], str(user_id))
-                    if not os.path.exists(user_folder):
-                        os.makedirs(user_folder)
-                    file.save(os.path.join(user_folder, filename))
-                    flash('File successfully uploaded')
-                    return redirect(url_for('index'))
-                else:
-                    flash('Invalid file type')
-    return render_template('upload.html')
+        file.save(os.path.join(upload_folder, filename))  # Save the file in the subfolder
+        flash('File successfully uploaded')
+        return redirect(url_for('index'))
+    return render_template('upload.html', form=form)
