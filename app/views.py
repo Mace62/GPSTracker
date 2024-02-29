@@ -38,22 +38,24 @@ def index():
     return render_template('index.html')
 
 
-#### Need a page to land on to select what the user wants to pay ####
+# Need a page to land on to select what the user wants to pay
 @app.route('/select_payment', methods=['GET', 'POST'])
 def select_payment():
     form = PaymentForm(request.form)
 
+    # Checks if form data has been submitted (a button has been clicked)
+    # Will save the clicked payment option to the session data so that the 
+    # /payment route can read and apply the selected option.
+    # also redirects to the page once form data is submitted
     if form.validate_on_submit():
         payment_option = request.form.get('payment_option')
         session['payment_option'] = payment_option
-        print(form.payment_option)
         return redirect(url_for('payment'))  # Redirect to the payment route
 
     return render_template("/select_payment.html", form=form)
 
 
-####    THIS IS TEST CODE FOR THE STIRPE API IMPLEMENTATION     ####
-
+# Redirect route for the Stripe payment screen
 @app.route('/payment', methods=['GET', 'POST'])
 @login_required
 def payment():
@@ -64,6 +66,8 @@ def payment():
             # Redirect user to select a payment option
             return redirect(url_for('select_payment'))
 
+        # Set up a Stripe checkout session with the uniquely selected product
+        # Stripe's checkout session will take care of the card payment
         checkout_session = stripe.checkout.Session.create(
             line_items = [
                 {
@@ -72,7 +76,7 @@ def payment():
                 }
             ],
             mode="subscription",
-            success_url = request.url + "/success.html",
+            success_url = request.url + "/index.html",
             cancel_url = request.url + "/aborted.html"
         )
 
