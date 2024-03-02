@@ -43,10 +43,11 @@ def index():
 def select_payment():
     form = PaymentForm(request.form)
 
-    # Checks if form data has been submitted (a button has been clicked)
-    # Will save the clicked payment option to the session data so that the 
-    # /payment route can read and apply the selected option.
-    # also redirects to the page once form data is submitted
+    new_user_data = session.get('new_user')
+
+    if not new_user_data:
+        flash("User data not found. Please register first.")
+        return redirect(url_for('register'))
     if form.validate_on_submit():
         payment_option = request.form.get('payment_option')
         session['payment_option'] = payment_option
@@ -57,9 +58,14 @@ def select_payment():
 
 # Redirect route for the Stripe payment screen
 @app.route('/payment', methods=['GET', 'POST'])
-@login_required
 def payment():
     try:
+        new_user_data = session.get('new_user')
+
+        if not new_user_data:
+            flash("User data not found. Please register first.")
+            return redirect(url_for('register'))
+        
         # Retrieve form data from session
         payment_option = session.get('payment_option')
         if not payment_option:
@@ -76,8 +82,8 @@ def payment():
                 }
             ],
             mode="subscription",
-            success_url = request.url + "/index.html",
-            cancel_url = request.url + "/aborted.html"
+            success_url = url_for('login_new_user', _external=True),
+            cancel_url = url_for('register', _external=True)
         )
 
     except Exception as e:
@@ -85,6 +91,35 @@ def payment():
     
     return redirect(checkout_session.url, code=303)
 
+@app.route('/login_new_user')
+def login_new_user():
+    new_user_data = session.get('new_user')
+
+    if not new_user_data:
+        flash("User data not found. Please register first.")
+        return redirect(url_for('register'))
+    
+    payment_option = session.get('payment_option')
+
+    if not payment_option:
+        flash("Payment option not found. Please select a payment option.")
+        return redirect(url_for('select_payment'))
+    
+    user = models.User(
+        username=new_user_data['username'],
+        password=new_user_data['password'],
+        firstname=new_user_data['firstname'],
+        lastname=new_user_data['lastname'],
+        email=new_user_data['email']
+    )
+    user.subscription_type = payment_option
+    user.payment_date = datetime.utcnow()
+    db.session.add(user)
+    db.session.commit()
+    user
+    login_user(user)
+    flash('You have been registered and logged in successfully. Welcome ' + str(user.username) + '!')
+    return redirect(url_for('index'))
 
 @app.route('/logout')
 @login_required
@@ -115,16 +150,14 @@ def register():
 
             # hash password
             hashed_password = bcrypt.generate_password_hash(form.password.data)
-            new_user = models.User(username=form.username.data,
-                                       password=hashed_password,
-                                       firstname=form.first_name.data,
-                                       lastname=form.last_name.data,
-                                       email=form.email.data)
-            db.session.add(new_user)
-            db.session.commit()
-            login_user(new_user)
-            flash("Registered and logged in successfully.")
-            return redirect(url_for('index'))
+            session['new_user'] = {
+                'username': form.username.data,
+                'password': hashed_password,
+                'firstname': form.first_name.data,
+                'lastname': form.last_name.data,
+                'email': form.email.data
+            }
+            return render_template('select_payment.html', form=PaymentForm())
         except Exception as e:
             flash(f"Error: {e}")
 
