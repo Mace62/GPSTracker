@@ -1,10 +1,12 @@
 flask
 __pycache__
+**/__pycache__
 app/__pycache__
 *.pyc
 migrations
 *.db
 *.log
-**/  # Include all subfolders
 /static/uploads/**
+/static/uploads/
 app/__pycache__/views.cpython-36.pyc
+**/uploads
