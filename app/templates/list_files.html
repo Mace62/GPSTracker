@@ -2,13 +2,28 @@
 
 {% block content %}
     <h1>My Files</h1>
-    <ul>
-        {% for file in files %}
-            <li>
-                <a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a>
-            </li>
-        {% endfor %}
-    </ul>
-
-   
+    {% if file_entries %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Upload Time</th>
+                    <th>Download</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in file_entries %}
+                    <tr>
+                        <td>{{ entry.filename }}</td>
+                        <td>{{ entry.upload_time.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td><a href="{{ url_for('download_file', filename=entry.filename) }}">Download</a></td>
+                        <td><a href="{{ url_for('delete_file', filename=entry.filename) }}">Delete</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no files uploaded.</p>
+    {% endif %}
 {% endblock %}

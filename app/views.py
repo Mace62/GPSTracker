@@ -8,6 +8,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
+from datetime import datetime
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -99,16 +100,29 @@ def upload_file():
     form = UploadForm()
     if request.method == 'POST' and form.validate_on_submit():
         file = form.file.data
-        filename = secure_filename(file.filename)
+        original_filename = secure_filename(file.filename)
         user_id = str(current_user.id)  # Get the user's ID
         upload_folder = os.path.join(app.root_path, 'static', 'uploads', user_id)  # Update the subfolder path
 
         if not os.path.exists(upload_folder):  # Create the subfolder if it doesn't exist
             os.makedirs(upload_folder)
 
-        file.save(os.path.join(upload_folder, filename))  # Save the file in the subfolder
+        # Generate a unique filename by appending a timestamp
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"{timestamp}_{original_filename}"
+
+        file.save(os.path.join(upload_folder, filename))  # Save the file with the new unique name
+
+        new_file = models.GPXFile(filename=filename, user_id=current_user.id)
+        db.session.add(new_file)
+        db.session.commit()
+
         flash('File successfully uploaded')
         return redirect(url_for('index'))
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(error, 'danger')
     return render_template('upload.html', form=form)
 
 @app.route('/myfiles')
@@ -118,7 +132,8 @@ def list_user_files():
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
     files = os.listdir(user_folder)
-    return render_template('list_files.html', files=files)
+    file_entries = models.GPXFile.query.filter_by(user_id=current_user.id).all()
+    return render_template('list_files.html', files=files, file_entries=file_entries)
 
 @app.route('/download/<filename>')
 @login_required
@@ -127,3 +142,14 @@ def download_file(filename):
     if not os.path.exists(os.path.join(user_folder, filename)):
         return 'File not found', 404
     return send_from_directory(user_folder, filename, as_attachment=True)
+
+@app.route('/delete/<filename>')
+@login_required
+def delete_file(filename):
+    user_folder = os.path.join(app.root_path,'static','uploads',str(current_user.id))
+    if not os.path.exists(os.path.join(user_folder, filename)):
+        return 'File not found', 404
+    os.remove(os.path.join(user_folder, filename))
+    db.session.query(models.GPXFile).filter(models.GPXFile.filename==filename).delete()
+    db.session.commit()
+    return redirect(url_for('list_user_files'))

@@ -35,6 +35,6 @@ class RegisterForm(FlaskForm):
 class UploadForm(FlaskForm):
     file = FileField('GPX File', validators=[
         FileRequired(),
-        FileAllowed(['gpx'], 'GPX files only!')
+        FileAllowed(['gpx'], 'Only GPX files can be uploaded!')
     ])
     submit = SubmitField('Upload')
