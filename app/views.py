@@ -1,12 +1,12 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for
-from app.forms import LoginForm, RegisterForm
+from app.forms import LoginForm, RegisterForm, SearchForm
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
 
-app.config['SECRET_KEY'] = 'your_secret_key'
+#app.config['SECRET_KEY'] = 'your_secret_key'
 
 bcrypt = Bcrypt(app)
 login_manager = LoginManager()
@@ -19,10 +19,19 @@ def load_user(user_id):
     return models.User.query.get(int(user_id))
 
 
-@app.route('/')
+@app.route("/")
+def show():
+
+    if current_user.is_authenticated:
+        return redirect('homepage')
+    else:
+        return redirect('login')
+
+
+@app.route('/homepage')
 @login_required
-def index():
-    return render_template('index.html')
+def homepage():
+    return render_template('homepage.html')
 
 @app.route('/logout')
 @login_required
@@ -62,7 +71,7 @@ def register():
             db.session.commit()
             login_user(new_user)
             flash("Registered and logged in successfully.")
-            return redirect(url_for('index'))
+            return redirect(url_for('homepage'))
         except Exception as e:
             flash(f"Error: {e}")
 
@@ -80,7 +89,7 @@ def login():
                 return redirect(url_for('admin'))   
             login_user(user)
             flash('Logged in successfully.')
-            return redirect(url_for('index'))
+            return redirect(url_for('homepage'))
         else:
             flash('Incorrect username or password. Please try again.', 'danger')
 
@@ -90,3 +99,133 @@ def login():
 @login_required
 def admin():
     return render_template('admin.html')
+
+
+
+@app.route('/send_friend_request/<int:receiver_id>', methods=['POST'])
+@login_required
+def send_friend_request(receiver_id):
+    if current_user.id == receiver_id:
+        flash('You cannot send a friend request to yourself.', 'warning')
+        return redirect(url_for('profile'))
+
+    existing_request = models.FriendRequest.query.filter(
+        (models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == receiver_id)
+    ).first()
+
+    if existing_request:
+        flash('A friend request has already been sent to this user.', 'info')
+        return redirect(url_for('profile'))
+
+    new_request = models.FriendRequest(sender_id=current_user.id, receiver_id=receiver_id, status='pending')
+    db.session.add(new_request)
+    db.session.commit()
+    flash('Friend request sent.', 'success')
+    return redirect(url_for('profile'))
+
+
+
+@app.route('/accept_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def accept_friend_request(request_id):
+    friend_request = models.FriendRequest.query.get(request_id)
+    if not friend_request or friend_request.receiver_id != current_user.id:
+        flash('Friend request not found.')
+        return redirect(url_for('homepage'))
+    friend_request.status = 'accepted'
+    db.session.commit()
+    flash('Friend request accepted.')
+    return redirect(url_for('homepage'))
+
+
+
+
+def perform_user_search(query, current_user):
+    results = []
+    follow_status = {}
+    if query:
+        # Exclude the current user from the search results
+        results = models.User.query.filter(
+            models.User.username.ilike(f'%{query}%'),
+            models.User.id != current_user.id  # Exclude the current user by ID
+        ).all()
+
+        for user in results:
+            friend_request = models.FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first()
+            if friend_request:
+                follow_status[user.id] = friend_request.status
+            else:
+                follow_status[user.id] = 'not_sent'
+
+    return results, follow_status
+
+@app.route('/profile')
+@login_required
+def profile():
+    query = request.args.get('q')
+    form = SearchForm() 
+    
+    if query:
+        results, follow_status = perform_user_search(query,current_user)
+        return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status)
+    else:
+        # Handle the case where there is no query (e.g., display all users or a blank search form)
+        return render_template('profile.html', form=form, query=query, results=[], user=current_user, follow_status={})
+
+
+@app.route('/send_friend_request/<username>', methods=['POST'])
+@login_required
+def send_friend_request(username):
+    user_to_request = User.query.filter_by(username=username).first_or_404()
+
+    # Check if the user is trying to send a friend request to themselves
+    if current_user.id == user_to_request.id:
+        flash("You cannot send a friend request to yourself.", "danger")
+        return redirect(url_for('profile', username=username))
+
+    # Check if there is already a friend request sent or if they are already friends
+    existing_request = models.FriendRequest.query.filter(
+        ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == user_to_request.id)) |
+        ((models.FriendRequest.receiver_id == current_user.id) & (FriendRequest.sender_id == user_to_request.id))
+    ).first()
+
+    if existing_request:
+        if existing_request.status == 'pending':
+            flash("Friend request already sent.", "info")
+        elif existing_request.status == 'accepted':
+            flash("You are already friends.", "info")
+        # Optionally handle 'declined' and 'removed' statuses here
+    else:
+        # If no existing request, create a new friend request
+        new_request = FriendRequest(sender_id=current_user.id, receiver_id=user_to_request.id, status='pending')
+        db.session.add(new_request)
+        db.session.commit()
+        flash(f"Friend request sent to {username}.", "success")
+
+    return redirect(url_for('profile', username=username))
+
+
+@app.route('/deny_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def deny_friend_request(request_id):
+    request = models.FriendRequest.query.get_or_404(request_id)
+    if request.receiver_id == current_user.id:
+        request.status = 'denied'
+        db.session.commit()
+        flash('Friend request denied.', 'success')
+    else:
+        flash('Unauthorized action.', 'danger')
+    return redirect(url_for('friends_and_requests'))
+
+
+@app.route('/accept_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def accept_friend_request(request_id):
+    request = models.FriendRequest.query.get_or_404(request_id)
+    if request.receiver_id == current_user.id:
+        request.status = 'accepted'
+        db.session.commit()
+        flash('Friend request accepted.', 'success')
+    else:
+        flash('Unauthorized action.', 'danger')
+    return redirect(url_for('friends_and_requests'))

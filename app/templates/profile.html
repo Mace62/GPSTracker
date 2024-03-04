@@ -1,0 +1,86 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>This is the profile page.</h1>
+
+<div class="profile-container">
+    <div class="sidebar">
+
+      <!-- Content for the sidebar like FRIENDS list or PROFILE information -->
+      <h3>Friend Requests</h3>
+      <div>
+          {% for request in received_requests %}
+          <div>
+              {{ request.sender.username }}
+              <!-- Accept Button -->
+              <form action="{{ url_for('accept_friend_request', request_id=request.id) }}" method="post">
+                  {{ form.csrf_token }}
+                  <button type="submit" class="btn btn-success">✔</button>
+              </form>
+              <!-- Deny Button -->
+              <form action="{{ url_for('deny_friend_request', request_id=request.id) }}" method="post">
+                  {{ form.csrf_token }}
+                  <button type="submit" class="btn btn-danger">✘</button>
+              </form>
+          </div>
+          {% endfor %}
+      
+      <h3>My Friends</h3>
+      <div>
+          {% for friend in friends %}
+          <div>{{ friend.username }}</div>
+          {% endfor %}
+      </div>    </div>
+    </div>
+    
+    <div class="main-content">
+      <!-- Main content area for PROFILE, UPLOAD, JOURNEYS -->
+      <form action="{{ url_for('profile') }}" method="get">
+        <input type="text" name="q" placeholder="Search users...">
+        <button type="submit">Search</button>
+    </form>
+
+    
+{% if query %}
+    <h3>Search Results for "{{ query }}"</h3>
+    <div class="container mt-4">
+        <div class="row">
+            {% for user in results %}
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <small class="text-muted">
+                            {{ user.username }}
+                        </small>
+                        {% if follow_status[user.id] == 'pending' %}
+                            <button class="btn btn-secondary">Request Sent</button>
+                        {% elif follow_status[user.id] == 'accepted' %}
+                            <button class="btn btn-success">Friend</button>
+                        {% else %}
+                        <form action="{{ url_for('send_friend_request', receiver_id=user.id) }}" method="post">
+                            {{ form.csrf_token }}
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-md-12">
+                <p>No users found.</p>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+
+
+
+    </div>
+  </div>
+
+{% endblock %}
+

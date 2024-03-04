@@ -1,0 +1,34 @@
+* {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+
+  
+  .profile-container {
+    display: flex;
+  }
+  
+  .sidebar {
+    flex: 1; /* Adjust the flex ratio as needed */
+    padding: 20px;
+    /* Add additional styling for the sidebar */
+  }
+  
+  .main-content {
+    flex: 3; /* Adjust the flex ratio as needed */
+    padding: 20px;
+    /* Add additional styling for the main content */
+  }
+  
+  
+  input[type="text"] {
+    padding: 10px;
+    margin: 10px 0;
+    width: calc(100% - 20px); /* Full width minus padding */
+    /* Add additional styling for the input */
+  }

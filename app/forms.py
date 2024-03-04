@@ -29,3 +29,7 @@ class RegisterForm(FlaskForm):
         
         if not any(char.isupper() for char in password):
             raise ValidationError('Password must contain at least one capital letter.')
+        
+class SearchForm(FlaskForm):
+    query = StringField('Search')
+    submit = SubmitField('Search')

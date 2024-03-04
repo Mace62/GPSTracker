@@ -378,6 +378,41 @@ class TestPasswordsMismatch(TestCase):
         self.assertIn(
             b'Passwords do not match.', response.data)
 
+class TestUserSearch(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        # Set up the database and test client, and add test data
+        db.create_all()
+        self.client = app.test_client()
+        # Add a couple of users to search
+        user1 = User(username='john_doe', firstname='John', lastname='Doe', email='john@example.com', password=bcrypt.generate_password_hash('test').decode('utf-8'))
+        user2 = User(username='jane_doe', firstname='Jane', lastname='Doe', email='jane@example.com', password=bcrypt.generate_password_hash('test').decode('utf-8'))
+        db.session.add_all([user1, user2])
+        db.session.commit()
+
+    def tearDown(self):
+        # Tear down and clean up the database
+        db.session.remove()
+        db.drop_all()
+
+    def test_user_search(self):
+        """Test searching for a user by username."""
+        login_response = self.client.post('/login', data=dict(
+            username='john_doe',
+            password='test'), follow_redirects=True)
+        self.assertEqual(login_response.status_code, 200, "Login failed")
+
+        response = self.client.get('/profile?q=jane', follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        # Check if the search results contain the expected username
+        self.assertIn(b'jane_doe', response.data, "Search did not return expected results")
+
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
