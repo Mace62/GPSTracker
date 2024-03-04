@@ -30,12 +30,6 @@ class RegisterForm(FlaskForm):
         if not any(char.isupper() for char in password):
             raise ValidationError('Password must contain at least one capital letter.')
 
-
-# This empty form is being used for passing in the CSRF tokens to webpages that do not require extra data input
-# It is also being used for testing
-class EmptyForm(FlaskForm):
-    pass
-
 # Payment form to get preferred payment option
 class PaymentForm(FlaskForm):
     payment_option = HiddenField('selected_option')

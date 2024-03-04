@@ -1,7 +1,7 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for, session
-from app.forms import LoginForm, RegisterForm, EmptyForm, PaymentForm
+from app.forms import LoginForm, RegisterForm, PaymentForm
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
@@ -112,11 +112,15 @@ def login_new_user():
         lastname=new_user_data['lastname'],
         email=new_user_data['email']
     )
-    user.subscription_type = payment_option
-    user.payment_date = datetime.utcnow()
     db.session.add(user)
     db.session.commit()
-    user
+    subscription_details = models.Subscriptions(
+        user_id=user.id,
+        subscription_type=payment_option,
+        payment_date=datetime.utcnow()
+    )
+    db.session.add(subscription_details)
+    db.session.commit()
     login_user(user)
     flash('You have been registered and logged in successfully. Welcome ' + str(user.username) + '!')
     return redirect(url_for('index'))
