@@ -2,9 +2,9 @@ import gpxpy
 import gpxpy.gpx
 
 def gpx_parse(filename):
-    with open('C:/Users/rashi/Downloads/fells_loop.gpx', 'r') as gpx_file:
+    with open(filename, 'r') as gpx_file:
         data = gpxpy.parse(gpx_file)
-        gpxfile = GPXFile("fells_loop")
+        gpxfile = GPXFile(filename)
 
     for waypoint in data.waypoints:
         gpxfile.waypoints.append(GPXPoint(waypoint.name, waypoint.latitude, waypoint.longitude, waypoint.elevation, waypoint.time, waypoint.description))
