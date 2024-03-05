@@ -128,6 +128,7 @@ def login_new_user():
     flash('You have been registered and logged in successfully. Welcome ' + str(user.username) + '!')
     return redirect(url_for('index'))
 
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -192,6 +193,7 @@ def login():
 @login_required
 def admin():
     return render_template('admin.html')
+<<<<<<< HEAD
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -251,3 +253,5 @@ def delete_file(filename):
     db.session.query(models.GPXFile).filter(models.GPXFile.filename==filename).delete()
     db.session.commit()
     return redirect(url_for('list_user_files'))
+=======
+>>>>>>> main
