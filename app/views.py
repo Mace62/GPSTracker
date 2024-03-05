@@ -193,7 +193,6 @@ def login():
 @login_required
 def admin():
     return render_template('admin.html')
-<<<<<<< HEAD
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -253,5 +252,3 @@ def delete_file(filename):
     db.session.query(models.GPXFile).filter(models.GPXFile.filename==filename).delete()
     db.session.commit()
     return redirect(url_for('list_user_files'))
-=======
->>>>>>> main
