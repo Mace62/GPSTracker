@@ -1,6 +1,8 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileRequired
 from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField
 from wtforms.validators import DataRequired, ValidationError, Email
+from flask_wtf.file import FileAllowed
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -29,3 +31,10 @@ class RegisterForm(FlaskForm):
         
         if not any(char.isupper() for char in password):
             raise ValidationError('Password must contain at least one capital letter.')
+        
+class UploadForm(FlaskForm):
+    file = FileField('GPX File', validators=[
+        FileRequired(),
+        FileAllowed(['gpx'], 'Only GPX files can be uploaded!')
+    ])
+    submit = SubmitField('Upload')
