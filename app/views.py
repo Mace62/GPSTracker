@@ -1,16 +1,7 @@
 from flask import *
 from app import app, models, db
-<<<<<<< HEAD
-from flask import render_template, flash, request, redirect, url_for, session
-from app.forms import LoginForm, RegisterForm, EmptyForm, PaymentForm
-from flask_bcrypt import Bcrypt
-from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from datetime import datetime
-import os
-import stripe
-=======
-from flask import render_template, flash, request, redirect, url_for, send_from_directory
-from app.forms import LoginForm, RegisterForm, UploadForm
+from flask import render_template, flash, request, redirect, url_for, send_from_directory, session
+from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
@@ -18,7 +9,7 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
->>>>>>> 0bb9a0a749165be6d53cb631df491114b0aa158c
+import stripe
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -124,11 +115,15 @@ def login_new_user():
         lastname=new_user_data['lastname'],
         email=new_user_data['email']
     )
-    user.subscription_type = payment_option
-    user.payment_date = datetime.utcnow()
     db.session.add(user)
     db.session.commit()
-    user
+    subscription_details = models.Subscriptions(
+        user_id=user.id,
+        subscription_type=payment_option,
+        payment_date=datetime.utcnow()
+    )
+    db.session.add(subscription_details)
+    db.session.commit()
     login_user(user)
     flash('You have been registered and logged in successfully. Welcome ' + str(user.username) + '!')
     return redirect(url_for('index'))
@@ -197,8 +192,6 @@ def login():
 @login_required
 def admin():
     return render_template('admin.html')
-<<<<<<< HEAD
-=======
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -258,4 +251,3 @@ def delete_file(filename):
     db.session.query(models.GPXFile).filter(models.GPXFile.filename==filename).delete()
     db.session.commit()
     return redirect(url_for('list_user_files'))
->>>>>>> 0bb9a0a749165be6d53cb631df491114b0aa158c
