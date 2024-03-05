@@ -1,6 +1,12 @@
 from flask_wtf import FlaskForm
+<<<<<<< HEAD
 from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField, HiddenField
+=======
+from flask_wtf.file import FileField, FileRequired
+from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField
+>>>>>>> 0bb9a0a749165be6d53cb631df491114b0aa158c
 from wtforms.validators import DataRequired, ValidationError, Email
+from flask_wtf.file import FileAllowed
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -29,6 +35,7 @@ class RegisterForm(FlaskForm):
         
         if not any(char.isupper() for char in password):
             raise ValidationError('Password must contain at least one capital letter.')
+<<<<<<< HEAD
 
 
 # This empty form is being used for passing in the CSRF tokens to webpages that do not require extra data input
@@ -40,3 +47,12 @@ class EmptyForm(FlaskForm):
 class PaymentForm(FlaskForm):
     payment_option = HiddenField('selected_option')
     submit = SubmitField('Submit')
+=======
+        
+class UploadForm(FlaskForm):
+    file = FileField('GPX File', validators=[
+        FileRequired(),
+        FileAllowed(['gpx'], 'Only GPX files can be uploaded!')
+    ])
+    submit = SubmitField('Upload')
+>>>>>>> 0bb9a0a749165be6d53cb631df491114b0aa158c
