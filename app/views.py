@@ -113,7 +113,7 @@ def upload_file():
 
         file.save(os.path.join(upload_folder, filename))  # Save the file with the new unique name
 
-        new_file = models.GPXFile(filename=filename, user_id=current_user.id)
+        new_file = models.GPXFileData(filename=filename, user_id=current_user.id)
         db.session.add(new_file)
         db.session.commit()
 
@@ -132,7 +132,7 @@ def list_user_files():
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
     files = os.listdir(user_folder)
-    file_entries = models.GPXFile.query.filter_by(user_id=current_user.id).all()
+    file_entries = models.GPXFileData.query.filter_by(user_id=current_user.id).all()
     return render_template('list_files.html', files=files, file_entries=file_entries)
 
 @app.route('/download/<filename>')
@@ -150,6 +150,6 @@ def delete_file(filename):
     if not os.path.exists(os.path.join(user_folder, filename)):
         return 'File not found', 404
     os.remove(os.path.join(user_folder, filename))
-    db.session.query(models.GPXFile).filter(models.GPXFile.filename==filename).delete()
+    db.session.query(models.GPXFileData).filter(models.GPXFileData.filename==filename).delete()
     db.session.commit()
     return redirect(url_for('list_user_files'))

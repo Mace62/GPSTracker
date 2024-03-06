@@ -19,7 +19,6 @@ class Admin(db.Model):
 
 
 ## Classes for GPX parsing ##
-
 class GPXFile:
     def __init__(self, name, filepath):
         self.name = name
@@ -71,7 +70,7 @@ class GPXPoint:
     def display_info(self):
         print(f"    Point: {self.name}, Location: ({self.latitude}, {self.longitude}), Elevation: {self.elevation}, Time: {self.time}")
 
-class GPXFile(db.Model):
+class GPXFileData(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     filename = db.Column(db.String(120), index = True, unique = True, nullable = False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

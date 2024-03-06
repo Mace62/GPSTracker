@@ -1,7 +1,9 @@
 from io import BytesIO
+import os
 import unittest
 import datetime
 import json
+from unittest.mock import mock_open, patch
 from flask_bcrypt import Bcrypt
 from flask_testing import TestCase
 from app import app, db
@@ -407,6 +409,11 @@ class TestFileUpload(TestCase):
         ), follow_redirects=True)
 
     def tearDown(self):
+        file = models.GPXFileData.query.filter_by(user_id=1).first() 
+        if file is not None:
+            os.remove(os.path.join( app.root_path, 'static', 'uploads', str(1) , file.filename))
+
+
         db.session.remove()
         db.drop_all()
 
@@ -429,7 +436,7 @@ class TestFileUpload(TestCase):
             self.assertIn(b'File successfully uploaded', response.data)
 
             # Check if the file is now in the database
-            file = models.GPXFile.query.filter_by(user_id=test_user.id).first()
+            file = models.GPXFileData.query.filter_by(user_id=test_user.id).first()
             self.assertIsNotNone(file)
 
 class TestFileDownload(TestCase):
@@ -462,6 +469,11 @@ class TestFileDownload(TestCase):
             ), content_type='multipart/form-data', follow_redirects=True)
 
     def tearDown(self):
+        # test_user = User.query.filter_by(username='testuser').first()
+        file = models.GPXFileData.query.filter_by(user_id=1).first() 
+        if file is not None:
+            os.remove(os.path.join( app.root_path, 'static', 'uploads', str(1) , file.filename))
+
         db.session.remove()
         db.drop_all()
 
@@ -476,7 +488,7 @@ class TestFileDownload(TestCase):
             ), follow_redirects=True)
 
             # get the filename by getting all user's files
-            file = models.GPXFile.query.filter_by(user_id=1).first()
+            file = models.GPXFileData.query.filter_by(user_id=1).first()
             filename = file.filename
 
             # Attempt to download the file
@@ -507,22 +519,19 @@ class TestGPXFile(unittest.TestCase):
         mock_gpxpy_parse.return_value.waypoints = [GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now())]
         mock_gpxpy_parse.return_value.routes = []
 
-        gpx_file = GPXFile("TestFile", "C:/Users/rashi/Downloads/fells_loop.gpx")
+        gpx_file = GPXFile("TestFile", os.path.join(app.root_path, 'static', 'Test_Files', 'fells_loop.gpx'))
 
         self.assertEqual(gpx_file.name, "TestFile")
         self.assertTrue(len(gpx_file.waypoints) > 0)
         self.assertEqual(gpx_file.waypoints[0].name, "Point1")
 
     def test_display_info(self):
-        gpx_file = GPXFile("TestFile", "C:/Users/rashi/Downloads/fells_loop.gpx")
+        gpx_file = GPXFile("TestFile", os.path.join(app.root_path, 'static', 'Test_Files', 'fells_loop.gpx'))
         gpx_file.tracks.append(GPXTrack("Track1"))
         gpx_file.waypoints.append(GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now()))
         with patch('builtins.print') as mocked_print:
             gpx_file.display_info()
             self.assertTrue(mocked_print.called)
-
-if __name__ == '__main__':
-    unittest.main()
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
