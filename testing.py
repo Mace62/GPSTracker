@@ -1,9 +1,11 @@
+from io import BytesIO
 import unittest
 import datetime
 import json
 from flask_bcrypt import Bcrypt
 from flask_testing import TestCase
 from app import app, db
+from app import models
 from app.models import *
 import datetime
 import os
@@ -379,6 +381,110 @@ class TestPasswordsMismatch(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Passwords do not match.', response.data)
+        
+
+class TestFileUpload(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+        # Create and login a test user
+        hashed_password = bcrypt.generate_password_hash("Testpassword!")
+        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com', password=hashed_password)
+        db.session.add(test_user)
+        db.session.commit()
+
+        # Login
+        self.client.post('/login', data=dict(
+            username='testuser',
+            password='Testpassword!'
+        ), follow_redirects=True)
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_file_upload(self):
+        """Test file upload functionality."""
+        with self.client:
+            # Log in the test user
+            self.client.post('/login', data=dict(
+                username='testuser',
+                password='Testpassword!'
+            ), follow_redirects=True)
+
+            # Perform file upload
+            test_user = User.query.filter_by(username='testuser').first()  # Define the test_user variable
+            response = self.client.post('/upload', data=dict(
+                file=(BytesIO(b"some initial gpx data"), 'test.gpx'),
+            ), content_type='multipart/form-data', follow_redirects=True)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'File successfully uploaded', response.data)
+
+            # Check if the file is now in the database
+            file = models.GPXFile.query.filter_by(user_id=test_user.id).first()
+            self.assertIsNotNone(file)
+
+class TestFileDownload(TestCase):
+    
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+        # Create and login a test user
+        hashed_password = bcrypt.generate_password_hash("Testpassword!")
+        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com', password=hashed_password)
+        db.session.add(test_user)
+        db.session.commit()
+
+        # Login
+        self.client.post('/login', data=dict(
+            username='testuser',
+            password='Testpassword!'
+        ), follow_redirects=True)
+
+        # Perform file upload
+        self.client.post('/upload', data=dict(
+                file=(BytesIO(b"some initial gpx data"), 'test.gpx'),
+            ), content_type='multipart/form-data', follow_redirects=True)
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_file_download(self):
+        """Test file download functionality."""
+        # Assume a file has been uploaded, either in setUp or another test
+        with self.client:
+            # Log in the test user
+            self.client.post('/login', data=dict(
+                username='testuser',
+                password='Testpassword!'
+            ), follow_redirects=True)
+
+            # get the filename by getting all user's files
+            file = models.GPXFile.query.filter_by(user_id=1).first()
+            filename = file.filename
+
+            # Attempt to download the file
+            response = self.client.get(f'/download/{filename}', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(b"some initial gpx data" in response.data)
+
 
 class TestGPXPoint(unittest.TestCase):
     def test_display_info(self):
@@ -437,5 +543,6 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXPoint))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXTrack))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXFile))
-
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileUpload))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileDownload))
     unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
