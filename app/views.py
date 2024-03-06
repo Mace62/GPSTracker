@@ -70,33 +70,27 @@ def select_payment():
 
 
 @app.route('/profile', methods=['GET', 'POST'])
+@login_required
 def profile():
     subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
     subscription_type = subscription.subscription_type
     return render_template('profile.html', subscription_type=subscription_type)
 
 @app.route('/change_subscription', methods=['GET', 'POST'])
+@login_required
 def change_subscription():
     form = PaymentForm()
     subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
-    if subscription.subscription_type == "Weekly":
-        next_payment_date =subscription.payment_date + timedelta(days=7)
-        tariff = 'Weekly'
-    elif subscription.subscription_type == "Monthly":
-        next_payment_date =subscription.payment_date + timedelta(days=30)
-        tariff = 'Monthly'
-    else:
-        next_payment_date =subscription.payment_date + timedelta(days=365)
-        tariff = 'Yearly'
-    next_payment_date = next_payment_date.strftime("%d/%m/%Y")
+    next_payment_date = subscription.payment_date.strftime("%Y-%m-%d")
     if form.validate_on_submit():
         payment_option = request.form.get('payment_option')
         session['payment_option'] = payment_option
         return redirect(url_for('new_subscription'))  # Redirect to the payment route
 
-    return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form, tariff=tariff)
+    return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form)
 
 @app.route('/new_subscription', methods=['GET', 'POST'])
+@login_required
 def new_subscription():
     try:
         # Retrieve form data from session
@@ -125,11 +119,19 @@ def new_subscription():
     return redirect(checkout_session.url, code=303)
 
 @app.route('/change_tariff', methods=['GET', 'POST'])
+@login_required
 def change_tariff():
     subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
     payment_option = session.get('payment_option')
     subscription.subscription_type = payment_option
+    if subscription.subscription_type == "Weekly":
+        subscription.payment_date += timedelta(days=7)
+    elif subscription.subscription_type == "Monthly":
+        subscription.payment_date += timedelta(days=30)
+    else:
+        subscription.payment_date += timedelta(days=365)
     db.session.commit()
+    flash('Your subscription has been updated successfully.')
     return redirect(url_for('profile'))
 
 
@@ -191,10 +193,16 @@ def login_new_user():
     )
     db.session.add(user)
     db.session.commit()
+    if payment_option == "Weekly":
+        next_payment = datetime.utcnow() + timedelta(days=7)
+    elif payment_option == "Monthly":
+        next_payment = datetime.utcnow() + timedelta(days=30)
+    else:
+        next_payment = datetime.utcnow() + timedelta(days=365)
     subscription_details = models.Subscriptions(
         user_id=user.id,
         subscription_type=payment_option,
-        payment_date=datetime.utcnow()
+        payment_date=next_payment
     )
     db.session.add(subscription_details)
     db.session.commit()
