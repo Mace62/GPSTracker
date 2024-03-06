@@ -8,7 +8,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import stripe
 
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -38,6 +38,16 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
+    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    if subscription:
+        if subscription.payment_date < datetime.utcnow():
+            if subscription.subscription_type == "Weekly":
+                subscription.payment_date += timedelta(days=7)
+            elif subscription.subscription_type == "Monthly":
+                subscription.payment_date += timedelta(days=30)
+            else:
+                subscription.payment_date += timedelta(days=365)
+            db.session.commit()
     return render_template('index.html')
 
 
@@ -57,6 +67,70 @@ def select_payment():
         return redirect(url_for('payment'))  # Redirect to the payment route
 
     return render_template("/select_payment.html", form=form)
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    subscription_type = subscription.subscription_type
+    return render_template('profile.html', subscription_type=subscription_type)
+
+@app.route('/change_subscription', methods=['GET', 'POST'])
+def change_subscription():
+    form = PaymentForm()
+    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    if subscription.subscription_type == "Weekly":
+        next_payment_date =subscription.payment_date + timedelta(days=7)
+        tariff = 'Weekly'
+    elif subscription.subscription_type == "Monthly":
+        next_payment_date =subscription.payment_date + timedelta(days=30)
+        tariff = 'Monthly'
+    else:
+        next_payment_date =subscription.payment_date + timedelta(days=365)
+        tariff = 'Yearly'
+    next_payment_date = next_payment_date.strftime("%d/%m/%Y")
+    if form.validate_on_submit():
+        payment_option = request.form.get('payment_option')
+        session['payment_option'] = payment_option
+        return redirect(url_for('new_subscription'))  # Redirect to the payment route
+
+    return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form, tariff=tariff)
+
+@app.route('/new_subscription', methods=['GET', 'POST'])
+def new_subscription():
+    try:
+        # Retrieve form data from session
+        payment_option = session.get('payment_option')
+        if not payment_option:
+            # Redirect user to select a payment option
+            return redirect(url_for('change_subscription'))
+
+        # Set up a Stripe checkout session with the uniquely selected product
+        # Stripe's checkout session will take care of the card payment
+        checkout_session = stripe.checkout.Session.create(
+            line_items = [
+                {
+                    "price": SUBSCRIPTION_PRODUCTS_ID[payment_option],
+                    "quantity": 1
+                }
+            ],
+            mode="subscription",
+            success_url = url_for('change_tariff', _external=True),
+            cancel_url = url_for('change_subscription', _external=True)
+        )
+
+    except Exception as e:
+        return str(e), 403
+    
+    return redirect(checkout_session.url, code=303)
+
+@app.route('/change_tariff', methods=['GET', 'POST'])
+def change_tariff():
+    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    payment_option = session.get('payment_option')
+    subscription.subscription_type = payment_option
+    db.session.commit()
+    return redirect(url_for('profile'))
 
 
 # Redirect route for the Stripe payment screen
