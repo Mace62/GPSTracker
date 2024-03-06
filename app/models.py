@@ -1,5 +1,6 @@
 from flask_login import UserMixin
 from app import db
+from datetime import datetime
 
 import gpxpy
 import gpxpy.gpx
@@ -15,6 +16,7 @@ class User(db.Model, UserMixin):
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
 
 ## Classes for GPX parsing ##
 
@@ -68,3 +70,9 @@ class GPXPoint:
 
     def display_info(self):
         print(f"    Point: {self.name}, Location: ({self.latitude}, {self.longitude}), Elevation: {self.elevation}, Time: {self.time}")
+
+class GPXFile(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    filename = db.Column(db.String(120), index = True, unique = True, nullable = False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    upload_time = db.Column(db.DateTime, index = True, default = datetime.utcnow)

@@ -3,6 +3,14 @@
 {% block title %}Register{% endblock %}
 
 {% block content %}
+
+<style>
+    .card {
+        border: none; /* Making the border invisible */
+        background-color: inherit;
+    }
+</style>
+
 <h1 class="card-title text-center">Registration Page</h1>
 <!-- Display flashed messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
