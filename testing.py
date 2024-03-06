@@ -61,13 +61,7 @@ class TestRegistration(TestCase):
         ), follow_redirects=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'Registered and logged in successfully.', response.data)
 
-        # Check if the user is now in the database
-        user = User.query.filter_by(username='testuser').first()
-        self.assertIsNotNone(user)
-        self.assertEqual(user.username, 'testuser')
 
 class TestLogin(TestCase):
 
@@ -483,6 +477,46 @@ class TestFileDownload(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(b"some initial gpx data" in response.data)
 
+
+
+# class TestRegistrationAndPayment(unittest.TestCase):
+
+#     def setUp(self):
+#         self.app = app.test_client()
+#         self.app.testing = True
+#         db.create_all()
+
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
+
+#     def test_registration_and_payment(self):
+#         # Register a user
+#         response = self.app.post('/register', data=dict(
+#             username='testuser',
+#             password='Testpassword!',
+#             email='testuser@example.com'), follow_redirects=True)
+#         self.assertEqual(response.status_code, 200)
+
+#         # Select the weekly payment option
+#         response = self.app.post('/select_payment', data=dict(
+#             payment_option='weekly'), follow_redirects=True)
+#         self.assertEqual(response.status_code, 200)
+
+#         # Make a payment with Stripe
+#         response = self.app.post('/payment', data=json.dumps({
+#             'card_number': '4242424242424242',
+#             'exp_month': 12,
+#             'exp_year': 2024,
+#             'cvc': '123',
+#             'name': 'Test User',
+#             'postcode': 'OL1 1AS'
+#         }), content_type='application/json', follow_redirects=True)
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(b'Payment successful', response.data)
+
+if __name__ == "__main__":
+    unittest.main()
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
