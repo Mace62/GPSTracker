@@ -10,13 +10,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Python 3.6.8
+    - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:
-        python-version: '3.6.8'
-        architecture: 'x64'
-        download-url: 'https://github.com/actions/python-versions/releases/download/3.6.8-109487/python-3.6.8-linux-18.04-x64.tar.gz'
-        installation-path: /opt/hostedtoolcache/Python/3.6.8/x64 
+        python-version: '3.6'
 
     - name: Install dependencies
       run: pip install -r requirements.txt
