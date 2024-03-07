@@ -506,7 +506,7 @@ class TestGPXPoint(unittest.TestCase):
 
 class TestGPXTrack(unittest.TestCase):
     def test_display_info(self):
-        track = GPXTrack("Track1")
+        track = GPXTrackData("Track1")
         track.points.append(GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now()))
         with patch('builtins.print') as mocked_print:
             track.display_info()
@@ -527,7 +527,7 @@ class TestGPXFile(unittest.TestCase):
 
     def test_display_info(self):
         gpx_file = GPXFile("TestFile", os.path.join(app.root_path, 'static', 'Test_Files', 'fells_loop.gpx'))
-        gpx_file.tracks.append(GPXTrack("Track1"))
+        gpx_file.tracks.append(GPXTrackData("Track1"))
         gpx_file.waypoints.append(GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now()))
         with patch('builtins.print') as mocked_print:
             gpx_file.display_info()
@@ -544,9 +544,10 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileUpload))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileDownload))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXPoint))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXTrack))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXFile))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileUpload))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileDownload))
+
     unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
