@@ -9,6 +9,8 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
+import folium
+from geopy.distance import geodesic
 from datetime import datetime
 
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -139,16 +141,52 @@ def list_user_files():
 @app.route('/view/<filename>')
 @login_required
 def view_file(filename):
+
     user_folder = os.path.join(app.root_path, 'static', 'uploads', str(current_user.id))
     if not os.path.exists(os.path.join(user_folder, filename)):
         return 'File not found', 404
     gpx_file = models.GPXFileData.query.filter_by(filename=filename).first()
-    waypoints = models.GPXWaypoint.query.filter_by(file_id=gpx_file.id).all()
 
+    waypoints = models.GPXWaypoint.query.filter_by(file_id=gpx_file.id).all()
     tracks = models.GPXTrack.query.filter_by(file_id=gpx_file.id).all()
-    track_points = models.GPXTrackPoint.query.join(models.GPXTrack).filter(models.GPXTrack.file_id == gpx_file.id).all()
-    print(gpx_file,waypoints, tracks, track_points)
-    return render_template('view_file.html', waypoints=waypoints, tracks=tracks, track_points=track_points, filename=filename)
+    if not tracks:
+        track_points = models.GPXTrackPoint.query.join(models.GPXTrack).filter(models.GPXTrack.file_id == gpx_file.id).all()
+    
+    if not waypoints or not tracks or not track_points:
+        return 'No tracks found in the GPX file', 404
+
+    run_map = folium.Map(location=[track_points[0].latitude, track_points[0].longitude], tiles=None, zoom_start=12)
+    # add Openstreetmap layer
+    folium.TileLayer('openstreetmap', name='OpenStreet Map').add_to(run_map)
+
+    # add feature group for Waypoints
+    fg_waypoints = folium.FeatureGroup(name='Waypoints').add_to(run_map)
+
+    # iterate over waypoints and create a marker for each
+    for waypoint in waypoints:
+        folium.Marker(
+            location=[waypoint.latitude, waypoint.longitude],
+            tooltip=waypoint.name,
+            icon=folium.Icon(color='red')
+        ).add_to(fg_waypoints)
+
+    # add feature group for Tracks
+    fg_tracks = folium.FeatureGroup(name='Tracks').add_to(run_map)
+
+    # iterate over tracks and create a polyline for each
+    for track in tracks:
+        track_points = models.GPXTrackPoint.query.filter_by(track_id=track.id).all()
+        # create a list of coordinates for the trackpoints
+        track_coords = [[point.latitude, point.longitude] for point in track_points]
+        # create a polyline and add it to the track feature group
+        folium.PolyLine(track_coords, color="blue", weight=4.5, opacity=1).add_to(fg_tracks)
+
+    # add legend in top right corner
+    run_map.add_child(folium.LayerControl(position='topright', collapsed=False, autoZIndex=True))
+
+    map_file = 'run_map.html'
+    run_map.save(os.path.join(user_folder, map_file))
+    return send_from_directory(user_folder, map_file)
 
 
 @app.route('/download/<filename>')

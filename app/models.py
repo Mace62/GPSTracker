@@ -94,7 +94,7 @@ class GPXFile:
                 time=waypoint.time,
                 file_id=gpxfile_data.id
             )
-            print(waypoint.name, waypoint.latitude, waypoint.longitude, waypoint.elevation, waypoint.time, gpxfile_data.id)
+            
             db.session.add(db_waypoint)
 
         for track in self.tracks:
