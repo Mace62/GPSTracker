@@ -283,11 +283,17 @@ def login():
 @app.route('/admin')
 @login_required
 def admin():
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('index'))
     return render_template('admin.html')
 
 @app.route('/all_users')
 @login_required
 def all_users():
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('index'))
     # Get all user IDs who are admins
     admin_user_ids = [admin.user_id for admin in models.Admin.query.all()]
 
