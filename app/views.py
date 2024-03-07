@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta
 import stripe
+from sqlalchemy import not_
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -38,16 +39,17 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
-    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
-    if subscription:
-        if subscription.payment_date < datetime.utcnow():
-            if subscription.subscription_type == "Weekly":
-                subscription.payment_date += timedelta(days=7)
-            elif subscription.subscription_type == "Monthly":
-                subscription.payment_date += timedelta(days=30)
-            else:
-                subscription.payment_date += timedelta(days=365)
-            db.session.commit()
+    subscriptions = models.Subscriptions.query.all()
+    if subscriptions:
+        for subscription in subscriptions:
+            if subscription.payment_date < datetime.utcnow():
+                if subscription.subscription_type == "Weekly":
+                    subscription.payment_date += timedelta(days=7)
+                elif subscription.subscription_type == "Monthly":
+                    subscription.payment_date += timedelta(days=30)
+                else:
+                    subscription.payment_date += timedelta(days=365)
+                db.session.commit()
     return render_template('index.html')
 
 
@@ -256,6 +258,13 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
+    if models.Admin.query.count() == 0:
+        new_admin = models.User(username="admin", password=bcrypt.generate_password_hash("Admin123!"), firstname="admin", lastname="admin", email="admin@admin.com")
+        db.session.add(new_admin)
+        db.session.commit()
+        admin = models.Admin(user_id=new_admin.id)
+        db.session.add(admin)
+        db.session.commit()
     if form.validate_on_submit():
         user = models.User.query.filter_by(username=form.username.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
@@ -275,6 +284,23 @@ def login():
 @login_required
 def admin():
     return render_template('admin.html')
+
+@app.route('/all_users')
+@login_required
+def all_users():
+    # Get all user IDs who are admins
+    admin_user_ids = [admin.user_id for admin in models.Admin.query.all()]
+
+    # Get all users who are not admins
+    non_admin_users = models.User.query.filter(not_(models.User.id.in_(admin_user_ids))).all()
+
+    # Get all user IDs
+    user_ids = [user.id for user in non_admin_users]
+
+    # Get all subscriptions of the users
+    user_subscriptions = models.Subscriptions.query.filter(models.Subscriptions.user_id.in_(user_ids)).all()
+    
+    return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
