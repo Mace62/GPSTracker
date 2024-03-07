@@ -10,16 +10,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Python 3.6.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.6.8'
+    - name: Install Python 3.6.8
+      run: |
+        sudo apt update
+        sudo apt install -y python3.6
+        python3.6 --version
+
+    - name: Install pip
+      run: |
+        sudo apt install -y python3-pip
+        pip3 --version
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: pip3 install -r requirements.txt
 
     - name: Run tests
       run: |
         export SQLALCHEMY_WARN_20=1
         export SQLALCHEMY_SILENCE_UBER_WARNING=1
-        python -m unittest discover -s tests -p '*_test.py'
+        python3.6 -m unittest discover -s tests -p '*_test.py'
