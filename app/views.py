@@ -1,5 +1,6 @@
 from flask import *
 from app import app, models, db
+from app.models import GPXFile
 from flask import render_template, flash, request, redirect, url_for, send_from_directory
 from app.forms import LoginForm, RegisterForm, UploadForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
@@ -107,18 +108,17 @@ def upload_file():
         if not os.path.exists(upload_folder):  # Create the subfolder if it doesn't exist
             os.makedirs(upload_folder)
 
-        # Generate a unique filename by appending a timestamp
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         filename = f"{timestamp}_{original_filename}"
 
         file.save(os.path.join(upload_folder, filename))  # Save the file with the new unique name
 
-        new_file = models.GPXFileData(filename=filename, user_id=current_user.id)
-        db.session.add(new_file)
-        db.session.commit()
+        gpx_file = GPXFile(name=filename, filepath=os.path.join(upload_folder, filename))
+        gpx_file.save_to_db(current_user.id)
 
         flash('File successfully uploaded')
-        return redirect(url_for('index'))
+
+        return redirect(url_for('view_file', filename=filename))
     else:
         for field, errors in form.errors.items():
             for error in errors:
@@ -134,6 +134,22 @@ def list_user_files():
     files = os.listdir(user_folder)
     file_entries = models.GPXFileData.query.filter_by(user_id=current_user.id).all()
     return render_template('list_files.html', files=files, file_entries=file_entries)
+
+# code to read data from the gpxwaypoint and gpxtrack tables
+@app.route('/view/<filename>')
+@login_required
+def view_file(filename):
+    user_folder = os.path.join(app.root_path, 'static', 'uploads', str(current_user.id))
+    if not os.path.exists(os.path.join(user_folder, filename)):
+        return 'File not found', 404
+    gpx_file = models.GPXFileData.query.filter_by(filename=filename).first()
+    waypoints = models.GPXWaypoint.query.filter_by(file_id=gpx_file.id).all()
+
+    tracks = models.GPXTrack.query.filter_by(file_id=gpx_file.id).all()
+    track_points = models.GPXTrackPoint.query.join(models.GPXTrack).filter(models.GPXTrack.file_id == gpx_file.id).all()
+    print(gpx_file,waypoints, tracks, track_points)
+    return render_template('view_file.html', waypoints=waypoints, tracks=tracks, track_points=track_points, filename=filename)
+
 
 @app.route('/download/<filename>')
 @login_required
