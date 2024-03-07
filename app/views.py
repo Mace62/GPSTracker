@@ -9,6 +9,7 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
+import math
 import folium
 from geopy.distance import geodesic
 from datetime import datetime
@@ -149,11 +150,10 @@ def view_file(filename):
 
     waypoints = models.GPXWaypoint.query.filter_by(file_id=gpx_file.id).all()
     tracks = models.GPXTrack.query.filter_by(file_id=gpx_file.id).all()
-    if not tracks:
-        track_points = models.GPXTrackPoint.query.join(models.GPXTrack).filter(models.GPXTrack.file_id == gpx_file.id).all()
+    track_points = models.GPXTrackPoint.query.join(models.GPXTrack).filter(models.GPXTrack.file_id == gpx_file.id).all()
     
-    if not waypoints or not tracks or not track_points:
-        return 'No tracks found in the GPX file', 404
+    # if not waypoints or not tracks or not track_points:
+    #     return 'No tracks found in the GPX file', 404
 
     run_map = folium.Map(location=[track_points[0].latitude, track_points[0].longitude], tiles=None, zoom_start=12)
     # add Openstreetmap layer
@@ -186,7 +186,69 @@ def view_file(filename):
 
     map_file = 'run_map.html'
     run_map.save(os.path.join(user_folder, map_file))
+
+    # Read the generated HTML file and modify the size of the map container
+    with open(os.path.join(user_folder, map_file), 'r') as f:
+        html_content = f.read()
+
+    # Modify the size of the map container div
+    modified_html_content = html_content.replace('class="folium-map"', 'class="folium-map" style="width: 45%; height: 450px; border: 5px solid black;top: 10.0%; left: 5%"')
+
+    # Save the modified HTML content back to the file
+    with open(os.path.join(user_folder, map_file), 'w') as f:
+        f.write(modified_html_content)
+
+    total_distance = total_distance_for_gpx(track_points)
+    print(total_distance)
+    total_time = total_time_for_gpx(track_points)
+    print(total_time)    
+    average_speed = average_speed_for_gpx(track_points)
+    print("Average Speed:", average_speed, "km/h")
+
     return send_from_directory(user_folder, map_file)
+
+def calculate_distance(lat1, long1, lat2, long2):
+    R = 6371  # Radius of the Earth in kilometers
+    lat1_rad = math.radians(lat1)
+    long1_rad = math.radians(long1)
+    lat2_rad = math.radians(lat2)
+    long2_rad = math.radians(long2)
+
+    delta_lat = lat2_rad - lat1_rad
+    delta_long = long2_rad - long1_rad
+
+    a = math.sin(delta_lat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_long/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+    distance = R * c  # Distance in kilometers
+    return distance
+
+# Function to calculate total distance for all points in GPX file
+def total_distance_for_gpx(gpx_points):
+    total_distance = 0
+    for i in range(len(gpx_points) - 1):
+        lat1, long1 = gpx_points[i].latitude, gpx_points[i].longitude
+        lat2, long2 = gpx_points[i+1].latitude, gpx_points[i+1].longitude
+        distance = calculate_distance(lat1, long1, lat2, long2)
+        total_distance += distance
+    return total_distance
+
+# Function to calculate total time for all points in GPX file
+def total_time_for_gpx(gpx_points):
+    start_time = gpx_points[0].time
+    end_time = gpx_points[-1].time
+    total_time = end_time - start_time
+    return total_time
+
+# Calculate average speed in km/h
+def average_speed_for_gpx(gpx_points):
+    total_distance = total_distance_for_gpx(gpx_points)
+    total_time_seconds = total_time_for_gpx(gpx_points).total_seconds()
+    # Convert total time to hours
+    total_time_hours = total_time_seconds / 3600
+    # Calculate average speed in km/h
+    average_speed = total_distance / total_time_hours
+    return average_speed
 
 
 @app.route('/download/<filename>')
