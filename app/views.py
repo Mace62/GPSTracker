@@ -126,6 +126,7 @@ def upload_file():
 
         # Save the file with the new unique name
         file.save(os.path.join(upload_folder, filename))
+        print("HAS SAVED")
 
         gpx_file = GPXFile(
             name=filename, filepath=os.path.join(upload_folder, filename))
@@ -133,7 +134,7 @@ def upload_file():
 
         flash('File successfully uploaded')
 
-        return redirect(url_for('display_map', filename=filename))
+        return redirect(url_for('view', filename=filename))
     else:
         for field, errors in form.errors.items():
             for error in errors:
@@ -153,11 +154,10 @@ def list_user_files():
         user_id=current_user.id).all()
     return render_template('list_files.html', files=files, file_entries=file_entries)
 
-
 @app.route('/generate_map/<filename>')
 @login_required
 def generate_map(filename):
-
+    print("generate map called")
     user_folder = os.path.join(
         app.root_path, 'static', 'uploads', str(current_user.id))
     if not os.path.exists(os.path.join(user_folder, filename)):
@@ -238,18 +238,41 @@ def generate_map(filename):
         average_speed = average_speed_for_gpx(track_points)
         print("Average Speed:", average_speed, "km/h")
 
-    return run_map._repr_html_()
-    # return send_from_directory(user_folder, map_file)
+    map_file = f'{filename}_map.html'
+    run_map.save(os.path.join(user_folder, map_file))
 
+    # Redirect to the route that will serve the map
+    return redirect(url_for('serve_map', filename=map_file))
+
+@app.route('/check_map_status/<filename>')
+def check_map_status(filename):
+    user_folder = os.path.join(app.root_path, 'static', 'uploads', str(current_user.id))
+    map_file = f'{filename}_map.html'
+    map_ready = os.path.exists(os.path.join(user_folder, map_file))
+    return jsonify({'map_ready': map_ready})
+
+@app.route('/serve_map/<filename>')
+@login_required
+def serve_map(filename):
+    user_folder = os.path.join(app.root_path, 'static', 'uploads', str(current_user.id))
+    file_path = os.path.join(user_folder, filename)
+    if not os.path.exists(file_path):
+        return 'Map file not found', 404
+
+    def generate():
+        with open(file_path, "rb") as f:
+            yield from f
+
+    return Response(generate(), mimetype='text/html')
 
 @app.route('/view/<filename>')
 @login_required
 def view(filename):
-    user_folder = os.path.join(
-        app.root_path, 'static', 'uploads', str(current_user.id))
-
-    map_url = f'/generate_map/{filename}'
-    return render_template('view_map.html', map_url=map_url)
+    generate_map(filename)
+    user_folder = os.path.join(app.root_path, 'static', 'uploads', str(current_user.id))
+    map_file = f'{filename}_map.html'
+    map_url = url_for('serve_map', filename=map_file)
+    return render_template('view_map.html', map_url=map_url, filename=filename)
 
 
 @app.route('/download/<filename>')
