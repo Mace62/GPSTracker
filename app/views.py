@@ -102,40 +102,40 @@ def admin():
 
 
 
-@app.route('/send_friend_request/<int:receiver_id>', methods=['POST'])
-@login_required
-def send_friend_request(receiver_id):
-    if current_user.id == receiver_id:
-        flash('You cannot send a friend request to yourself.', 'warning')
-        return redirect(url_for('profile'))
+# @app.route('/send_friend_request/<int:receiver_id>', methods=['POST'])
+# @login_required
+# def send_friend_request(receiver_id):
+#     if current_user.id == receiver_id:
+#         flash('You cannot send a friend request to yourself.', 'warning')
+#         return redirect(url_for('profile'))
 
-    existing_request = models.FriendRequest.query.filter(
-        (models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == receiver_id)
-    ).first()
+#     existing_request = models.FriendRequest.query.filter(
+#         (models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == receiver_id)
+#     ).first()
 
-    if existing_request:
-        flash('A friend request has already been sent to this user.', 'info')
-        return redirect(url_for('profile'))
+#     if existing_request:
+#         flash('A friend request has already been sent to this user.', 'info')
+#         return redirect(url_for('profile'))
 
-    new_request = models.FriendRequest(sender_id=current_user.id, receiver_id=receiver_id, status='pending')
-    db.session.add(new_request)
-    db.session.commit()
-    flash('Friend request sent.', 'success')
-    return redirect(url_for('profile'))
+#     new_request = models.FriendRequest(sender_id=current_user.id, receiver_id=receiver_id, status='pending')
+#     db.session.add(new_request)
+#     db.session.commit()
+#     flash('Friend request sent.', 'success')
+#     return redirect(url_for('profile'))
 
 
 
-@app.route('/accept_friend_request/<int:request_id>', methods=['POST'])
-@login_required
-def accept_friend_request(request_id):
-    friend_request = models.FriendRequest.query.get(request_id)
-    if not friend_request or friend_request.receiver_id != current_user.id:
-        flash('Friend request not found.')
-        return redirect(url_for('homepage'))
-    friend_request.status = 'accepted'
-    db.session.commit()
-    flash('Friend request accepted.')
-    return redirect(url_for('homepage'))
+# @app.route('/accept_friend_request/<int:request_id>', methods=['POST'])
+# @login_required
+# def accept_friend_request(request_id):
+#     friend_request = models.FriendRequest.query.get(request_id)
+#     if not friend_request or friend_request.receiver_id != current_user.id:
+#         flash('Friend request not found.')
+#         return redirect(url_for('homepage'))
+#     friend_request.status = 'accepted'
+#     db.session.commit()
+#     flash('Friend request accepted.')
+#     return redirect(url_for('homepage'))
 
 
 
@@ -162,21 +162,34 @@ def perform_user_search(query, current_user):
 @app.route('/profile')
 @login_required
 def profile():
+    print("current user= ",current_user)
     query = request.args.get('q')
     form = SearchForm() 
+    received_requests = current_user.received_requests.filter_by(status='pending').all()
+    # Fetch received friend requests
+    received_requests = current_user.received_requests.filter_by(status='pending').all()
+
+    # Fetch friends (where the current user is either the sender or receiver of an accepted friend request)
+    sent_friendships = current_user.sent_requests.filter_by(status='accepted').all()
+    received_friendships = current_user.received_requests.filter_by(status='accepted').all()
+    
+    # Combine and deduplicate friends
+    friends = {fr.receiver for fr in sent_friendships if fr.receiver_id != current_user.id}
+    friends.update({fr.sender for fr in received_friendships if fr.sender_id != current_user.id})
+    print("His friend is",friends)
+    print(received_requests)
     
     if query:
-        results, follow_status = perform_user_search(query,current_user)
-        return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status)
+        results, follow_status = perform_user_search(query, current_user)
+        return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends)
     else:
-        # Handle the case where there is no query (e.g., display all users or a blank search form)
-        return render_template('profile.html', form=form, query=query, results=[], user=current_user, follow_status={})
-
+        # Handle the case where there is no query
+        return render_template('profile.html', form=form, query=query, results=[], user=current_user, follow_status={}, received_requests=received_requests, friends=friends)
 
 @app.route('/send_friend_request/<username>', methods=['POST'])
 @login_required
 def send_friend_request(username):
-    user_to_request = User.query.filter_by(username=username).first_or_404()
+    user_to_request = models.User.query.filter_by(username=username).first_or_404()
 
     # Check if the user is trying to send a friend request to themselves
     if current_user.id == user_to_request.id:
@@ -186,7 +199,7 @@ def send_friend_request(username):
     # Check if there is already a friend request sent or if they are already friends
     existing_request = models.FriendRequest.query.filter(
         ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == user_to_request.id)) |
-        ((models.FriendRequest.receiver_id == current_user.id) & (FriendRequest.sender_id == user_to_request.id))
+        ((models.FriendRequest.receiver_id == current_user.id) & (models.FriendRequest.sender_id == user_to_request.id))
     ).first()
 
     if existing_request:
@@ -197,7 +210,7 @@ def send_friend_request(username):
         # Optionally handle 'declined' and 'removed' statuses here
     else:
         # If no existing request, create a new friend request
-        new_request = FriendRequest(sender_id=current_user.id, receiver_id=user_to_request.id, status='pending')
+        new_request = models.FriendRequest(sender_id=current_user.id, receiver_id=user_to_request.id, status='pending')
         db.session.add(new_request)
         db.session.commit()
         flash(f"Friend request sent to {username}.", "success")

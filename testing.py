@@ -412,7 +412,61 @@ class TestUserSearch(TestCase):
         self.assertEqual(response.status_code, 200)
         # Check if the search results contain the expected username
         self.assertIn(b'jane_doe', response.data, "Search did not return expected results")
+        
+class TestAddFriends(TestCase):
 
+    def create_app(self):
+        # Setup Flask application configuration for testing
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        return app
+
+    def setUp(self):
+        # Initialize the database and test client, and create test users
+        db.create_all()
+        self.client = app.test_client()
+      # Add a couple of users to add
+        user1 = User(username='john_doe', firstname='John', lastname='Doe', email='john@example.com', password=bcrypt.generate_password_hash('test').decode('utf-8'))
+        user2 = User(username='jane_doe', firstname='Jane', lastname='Doe', email='jane@example.com', password=bcrypt.generate_password_hash('test').decode('utf-8'))
+        db.session.add_all([user1, user2])
+        db.session.commit()
+
+    def tearDown(self):
+        # Clean up the database after tests
+        db.session.remove()
+        db.drop_all()
+
+    def login(self, username, password):
+        # Helper method to log in a user
+        return self.client.post('/login', data={
+            'username': username,
+            'password': password
+        }, follow_redirects=True)
+
+    def logout(self):
+        # Helper method to log out the current user
+        return self.client.get('/logout', follow_redirects=True)
+
+    def test_accept_friend_request(self):
+        """Ensure that a user can accept a friend request."""
+        # User1 logs in and sends a friend request to User2
+        self.login('user1', 'User1password!')
+        user2 = User.query.filter_by(username='user2').first()
+        self.client.post(f'/send_friend_request/{user2.username}', follow_redirects=True)
+        self.logout()
+
+        # User2 logs in to accept the friend request from User1
+        self.login('user2', 'User2password!')
+        friend_request = FriendRequest.query.filter_by(sender_id=User.query.filter_by(username='user1').first().id, receiver_id=user2.id).first()
+        accept_response = self.client.post(f'/accept_friend_request/{friend_request.id}', follow_redirects=True)
+        self.assertIn(b'Friend request accepted.', accept_response.data, "Accepting friend request failed or confirmation message missing")
+
+        # Verify the friend request status has been updated to 'accepted'
+        updated_request = FriendRequest.query.get(friend_request.id)
+        self.assertEqual(updated_request.status, 'accepted', "Friend request was not correctly accepted")
+
+        self.logout()
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
@@ -424,4 +478,11 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestAddFriends))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserSearch))
+
+    
+    
+
+
     unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
