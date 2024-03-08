@@ -77,22 +77,25 @@
             <div class="card-header">
                 <small class="text-muted">{{ user.username }}</small>
                 {% if follow_status[user.id].status == 'pending_received' %}
-
                     <!-- Buttons for accepting or denying the friend request -->
                     <div class="d-flex">
                         <!-- Accept Button -->
-                        <form action="{{ url_for('accept_friend_request', request_id=user.id) }}" method="post" class="d-inline">
+                        <form action="{{ url_for('accept_friend_request', request_id=follow_status[user.id].request_id) }}" method="post" class="d-inline">
                             {{ form.csrf_token }}
                             <button type="submit" class="btn btn-success me-1">Accept</button>
                         </form>
                         <!-- Deny Button -->
-                        <form action="{{ url_for('deny_friend_request', request_id=user.id) }}" method="post" class="d-inline">
+                        <form action="{{ url_for('deny_friend_request', request_id=follow_status[user.id].request_id) }}" method="post" class="d-inline">
                             {{ form.csrf_token }}
                             <button type="submit" class="btn btn-danger">Deny</button>
                         </form>
                       </div>
-                {% elif follow_status[user.id].status == 'pending' %}
-                    <button class="btn btn-secondary">Request Sent</button>
+                      {% elif follow_status[user.id].status == 'pending' %}
+                        <!-- Cancel Request Button -->
+                        <form action="{{ url_for('cancel_friend_request', request_id=follow_status[user.id].request_id) }}" method="post">
+                            {{ form.csrf_token }}
+                            <button type="submit" class="btn btn-secondary" >Sent Request</button>
+                        </form>
                 {% elif follow_status[user.id].status == 'friend' %}
                     <form action="{{ url_for('remove_friend', friend_id=user.id) }}" method="post">
                         {{ form.csrf_token }}

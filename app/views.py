@@ -139,7 +139,6 @@ def profile():
     # Fetch friends (where the current user is either the sender or receiver of an accepted friend request)
     sent_friendships = current_user.sent_requests.filter_by(status='accepted').all()
     received_friendships = current_user.received_requests.filter_by(status='accepted').all()
-    
     # Combine and deduplicate friends
     friends = {fr.receiver for fr in sent_friendships if fr.receiver_id != current_user.id}
     friends.update({fr.sender for fr in received_friendships if fr.sender_id != current_user.id})
@@ -253,4 +252,18 @@ def remove_friend(friend_id):
     
     db.session.commit()
     flash('Friend removed successfully.', 'success')
+    return redirect(url_for('profile'))
+
+
+
+@app.route('/cancel_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def cancel_friend_request(request_id):
+    friend_request = models.FriendRequest.query.get_or_404(request_id)
+    if friend_request.sender_id == current_user.id and friend_request.status == 'pending':
+        db.session.delete(friend_request)
+        db.session.commit()
+        flash('Friend request canceled.', 'success')
+    else:
+        flash('Unauthorized action or request not found.', 'danger')
     return redirect(url_for('profile'))
