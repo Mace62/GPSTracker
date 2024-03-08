@@ -21,7 +21,7 @@
   
   .main-content {
     flex: 3; /* Adjust the flex ratio as needed */
-    padding: 20px;
+    padding: 40px;
     /* Add additional styling for the main content */
   }
   
@@ -29,7 +29,7 @@
   input[type="text"] {
     padding: 10px;
     margin: 10px 0;
-    width: calc(100% - 20px); /* Full width minus padding */
+    width: calc(100% - 40px); /* Full width minus padding */
     /* Add additional styling for the input */
   }
 

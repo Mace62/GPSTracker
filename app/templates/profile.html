@@ -1,115 +1,119 @@
 
+
+
 {% extends "base.html" %}
 
 {% block content %}
-
-
-<div class="profile-container">
-    <div class="sidebar">
-
-      <!-- Content for the sidebar like FRIENDS list or PROFILE information -->
-      <h3>Friend Requests</h3>
-      <div>
-          {% if received_requests %}
-              {% for request in received_requests %}
-              <div>
-                  {{ request.sender.username }}
-                  <!-- Accept Button -->
-                  <form action="{{ url_for('accept_friend_request', request_id=request.id) }}" method="post">
-                      {{ form.csrf_token }}
-                      <button type="submit" class="btn btn-success">✔</button>
-                  </form>
-                  <!-- Deny Button -->
-                  <form action="{{ url_for('deny_friend_request', request_id=request.id) }}" method="post">
-                      {{ form.csrf_token }}
-                      <button type="submit" class="btn btn-danger">✘</button>
-                  </form>
-              </div>
-              {% endfor %}
-          {% else %}
-              <p>This is where pending friend requests will be held.</p>
-          {% endif %}
-      </div>
-      
-      <h3>My Friends</h3>
-      <div>
-          {% for friend in friends %}
-          <div class="col-md-12 mb-4">
+<div class="container-fluid">
+  <div class="row">
+    <!-- Left Column: Friend Requests and My Friends -->
+    <div class="col-md-6">
+      <div class="sidebar">
+        <h3>Friend Requests</h3>
+        <!-- Friend Requests Content -->
+        {% if received_requests %}
+          {% for request in received_requests %}
+          <div class="mb-4">
             <div class="card">
-                <div class="card-header">
-                    <small class="text-muted">
-                        {{ friend.username }}
-                    </small>
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                  {{ request.sender.username }}
+                </small>
+                <!-- Accept/Deny Buttons -->
+                <div>
+                  <form action="{{ url_for('accept_friend_request', request_id=request.id) }}" method="post" class="d-inline">
+                    {{ form.csrf_token }}
+                    <button type="submit" class="btn btn-success">✔</button>
+                  </form>
+                  <form action="{{ url_for('deny_friend_request', request_id=request.id) }}" method="post" class="d-inline">
+                    {{ form.csrf_token }}
+                    <button type="submit" class="btn btn-danger">✘</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p>No pending friend requests.</p>
+        {% endif %}
+        
+        <h3>My Friends</h3>
+        <!-- My Friends Content -->
+        {% for friend in friends %}
+        <div class="mb-4">
+          <div class="card">
+            <div class="card-header">
+              <small class="text-muted">
+                {{ friend.username }}
+              </small>
+              <form action="{{ url_for('remove_friend', friend_id=friend.id) }}" method="post" class="d-inline">
+                {{ form.csrf_token }}
+                <button type="submit" class="btn btn-danger">Remove Friend</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
 
-                    <form action="{{ url_for('remove_friend', friend_id=friend.id) }}" method="post">
+    <!-- Right Column: Search Area -->
+    <div class="col-md-6">
+      <div class="main-content">
+        <!-- Search Form -->
+        <form action="{{ url_for('profile') }}" method="get">
+          <input type="text" name="q" placeholder="Search users..." class="form-control">
+          <button type="submit" class="btn btn-primary mt-2">Search</button>
+        </form>
+
+        <!-- Search Results -->
+        {% if query %}
+        <h3>Search Results for "{{ query }}"</h3>
+        {% for user in results %}
+        <!-- User Cards -->
+        <div class="mb-4">
+          <div class="card">
+            <div class="card-header">
+                <small class="text-muted">{{ user.username }}</small>
+                {% if follow_status[user.id].status == 'pending_received' %}
+
+                    <!-- Buttons for accepting or denying the friend request -->
+                    <div class="d-flex">
+                        <!-- Accept Button -->
+                        <form action="{{ url_for('accept_friend_request', request_id=user.id) }}" method="post" class="d-inline">
+                            {{ form.csrf_token }}
+                            <button type="submit" class="btn btn-success me-1">Accept</button>
+                        </form>
+                        <!-- Deny Button -->
+                        <form action="{{ url_for('deny_friend_request', request_id=user.id) }}" method="post" class="d-inline">
+                            {{ form.csrf_token }}
+                            <button type="submit" class="btn btn-danger">Deny</button>
+                        </form>
+                      </div>
+                {% elif follow_status[user.id].status == 'pending' %}
+                    <button class="btn btn-secondary">Request Sent</button>
+                {% elif follow_status[user.id].status == 'friend' %}
+                    <form action="{{ url_for('remove_friend', friend_id=user.id) }}" method="post">
                         {{ form.csrf_token }}
                         <button type="submit" class="btn btn-success">Friend</button>
                     </form>
-                </div>
+                {% else %}
+                    <form action="{{ url_for('send_friend_request', username=user.username) }}" method="post">
+                        {{ form.csrf_token }}
+                        <button type="submit" class="btn btn-primary">Add Friend</button>
+                    </form>
+                {% endif %}
+              <!-- User Info and Buttons (Accept, Deny, Add Friend, etc.) -->
             </div>
+          </div>
         </div>
-          {% endfor %}
-      </div> 
-    </div>
-    
-    <div class="main-content">
-      <!-- Main content area for PROFILE, UPLOAD, JOURNEYS -->
-      <form action="{{ url_for('profile') }}" method="get">
-        <input type="text" name="q" placeholder="Search users...">
-        <button type="submit">Search</button>
-    </form>
-
-    {% if query %}
-    <h3>Search Results for "{{ query }}"</h3>
-    <div class="container mt-4">
-        <div class="row">
-            {% for user in results %}
-            <div class="col-md-12 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <small class="text-muted">{{ user.username }}</small>
-                        {% if follow_status[user.id] == 'pending_received' %}
-                            <!-- Buttons for accepting or denying the friend request -->
-                            <form action="{{ url_for('accept_friend_request', request_id=user.id) }}" method="post">
-                                {{ form.csrf_token }}
-                                <button type="submit" class="btn btn-success">Accept</button>
-                            </form>
-                            <form action="{{ url_for('deny_friend_request', request_id=user.id) }}" method="post">
-                                {{ form.csrf_token }}
-                                <button type="submit" class="btn btn-danger">Deny</button>
-                            </form>
-                        {% elif follow_status[user.id] == 'pending' %}
-                            <button class="btn btn-secondary">Request Sent</button>
-                        {% elif follow_status[user.id] == 'friend' %}
-                            <form action="{{ url_for('remove_friend', friend_id=user.id) }}" method="post">
-                                {{ form.csrf_token }}
-                                <button type="submit" class="btn btn-success">Friend</button>
-                            </form>
-                        {% else %}
-                            <form action="{{ url_for('send_friend_request', username=user.username) }}" method="post">
-                                {{ form.csrf_token }}
-                                <button type="submit" class="btn btn-primary">Add Friend</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
         {% else %}
-            <div class="col-md-12">
-                <p>No users found.</p>
-            </div>
+        <p>No users found.</p>
         {% endfor %}
-        </div>
-    </div>
-{% endif %}
-
-       
-
-
-
-
+        {% endif %}
+      </div>
     </div>
   </div>
-
+</div>
 {% endblock %}
-
