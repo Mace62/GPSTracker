@@ -1,26 +1,36 @@
-name: Run Tests
+name: Run tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+  workflow_dispatch:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Set up Python 3.6.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.6.8'
-        architecture: 'x86'
-
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Run tests
-      run: |
-        export SQLALCHEMY_WARN_20=1
-        export SQLALCHEMY_SILENCE_UBER_WARNING=1
-        python -m unittest discover -s tests -p '*_test.py'
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Set Up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+      - name: Install package
+        run: python setup.py install
+      - name: Install pytest
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+      - name: Run tests
+        run: pytest tests/test*
