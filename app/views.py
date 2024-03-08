@@ -140,22 +140,47 @@ def admin():
 
 
 
+# def perform_user_search(query, current_user):
+#     results = []
+#     follow_status = {}
+#     if query:
+#         # Exclude the current user from the search results
+#         results = models.User.query.filter(
+#             models.User.username.ilike(f'%{query}%'),
+#             models.User.id != current_user.id  # Exclude the current user by ID
+#         ).all()
+
+#         for user in results:
+#             friend_request = models.FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first()
+#             if friend_request:
+#                 follow_status[user.id] = friend_request.status
+#             else:
+#                 follow_status[user.id] = 'not_sent'
+
+#     return results, follow_status
+
+
 def perform_user_search(query, current_user):
     results = []
     follow_status = {}
     if query:
-        # Exclude the current user from the search results
         results = models.User.query.filter(
             models.User.username.ilike(f'%{query}%'),
-            models.User.id != current_user.id  # Exclude the current user by ID
+            models.User.id != current_user.id
         ).all()
 
         for user in results:
-            friend_request = models.FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first()
-            if friend_request:
-                follow_status[user.id] = friend_request.status
+            # Check for requests sent by the current user
+            sent_request = models.FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first()
+            if sent_request:
+                follow_status[user.id] = sent_request.status
             else:
-                follow_status[user.id] = 'not_sent'
+                # Check for requests received by the current user
+                received_request = models.FriendRequest.query.filter_by(sender_id=user.id, receiver_id=current_user.id).first()
+                if received_request:
+                    follow_status[user.id] = received_request.status + '_received'
+                else:
+                    follow_status[user.id] = 'not_sent'
 
     return results, follow_status
 
@@ -167,7 +192,6 @@ def profile():
     form = SearchForm() 
     received_requests = current_user.received_requests.filter_by(status='pending').all()
     # Fetch received friend requests
-    received_requests = current_user.received_requests.filter_by(status='pending').all()
 
     # Fetch friends (where the current user is either the sender or receiver of an accepted friend request)
     sent_friendships = current_user.sent_requests.filter_by(status='accepted').all()
@@ -181,10 +205,20 @@ def profile():
     
     if query:
         results, follow_status = perform_user_search(query, current_user)
+        # Update follow_status for each user based on friendship
+        for user in results:
+            if user in friends:
+                # This user is a friend
+                follow_status[user.id] = 'friend'
+            else:
+                # Already handled in perform_user_search: pending, accepted, not_sent, etc.
+                pass
+
         return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends)
     else:
-        # Handle the case where there is no query
-        return render_template('profile.html', form=form, query=query, results=[], user=current_user, follow_status={}, received_requests=received_requests, friends=friends)
+        return render_template('profile.html', form=form, query=None, results=[], user=current_user, follow_status={}, received_requests=received_requests, friends=friends)
+
+    
 
 @app.route('/send_friend_request/<username>', methods=['POST'])
 @login_required
@@ -242,7 +276,7 @@ def accept_friend_request(request_id):
         flash('Friend request accepted.', 'success')
     else:
         flash('Unauthorized action.', 'danger')
-    return redirect(url_for('friends_and_requests'))
+    return redirect(url_for('profile'))
 
 @app.route('/remove_friend/<int:friend_id>', methods=['POST'])
 @login_required
@@ -260,12 +294,7 @@ def remove_friend(friend_id):
         flash("No friend connection found.", "danger")
         return redirect(url_for('profile'))
 
-    # Here you could choose to delete the friend request or update its status to 'removed'
-    # To delete:
     db.session.delete(friend_request)
-    
-    # Alternatively, to update status (if you prefer to keep a record):
-    # friend_request.status = 'removed'
     
     db.session.commit()
     flash('Friend removed successfully.', 'success')
