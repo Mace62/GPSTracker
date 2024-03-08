@@ -190,6 +190,7 @@ def login_new_user():
         firstname=new_user_data['firstname'],
         lastname=new_user_data['lastname'],
         email=new_user_data['email']
+        # has_payed=new_user_data[]
     )
     db.session.add(user)
     db.session.commit()
