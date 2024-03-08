@@ -41,9 +41,9 @@
                         {{ friend.username }}
                     </small>
 
-                    <form action="{{ url_for('send_friend_request',  username=user.username) }}" method="post">
+                    <form action="{{ url_for('remove_friend', friend_id=friend.id) }}" method="post">
                         {{ form.csrf_token }}
-                        <button class="btn btn-success">Friend</button>
+                        <button type="submit" class="btn btn-success">Friend</button>
                     </form>
                 </div>
             </div>

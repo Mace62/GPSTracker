@@ -223,12 +223,13 @@ def send_friend_request(username):
 def deny_friend_request(request_id):
     request = models.FriendRequest.query.get_or_404(request_id)
     if request.receiver_id == current_user.id:
-        request.status = 'denied'
+        # Delete the friend request instead of changing its status
+        db.session.delete(request)
         db.session.commit()
         flash('Friend request denied.', 'success')
     else:
         flash('Unauthorized action.', 'danger')
-    return redirect(url_for('friends_and_requests'))
+    return redirect(url_for('profile'))
 
 
 @app.route('/accept_friend_request/<int:request_id>', methods=['POST'])
@@ -242,3 +243,30 @@ def accept_friend_request(request_id):
     else:
         flash('Unauthorized action.', 'danger')
     return redirect(url_for('friends_and_requests'))
+
+@app.route('/remove_friend/<int:friend_id>', methods=['POST'])
+@login_required
+def remove_friend(friend_id):
+    # Assuming 'friend_id' is the user ID of the friend to be removed
+
+    # Check if the current user has a friend request with the given friend_id that's accepted
+    friend_request = models.FriendRequest.query.filter(
+        models.FriendRequest.status == 'accepted',
+        ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == friend_id)) |
+        ((models.FriendRequest.sender_id == friend_id) & (models.FriendRequest.receiver_id == current_user.id))
+    ).first()
+
+    if not friend_request:
+        flash("No friend connection found.", "danger")
+        return redirect(url_for('profile'))
+
+    # Here you could choose to delete the friend request or update its status to 'removed'
+    # To delete:
+    db.session.delete(friend_request)
+    
+    # Alternatively, to update status (if you prefer to keep a record):
+    # friend_request.status = 'removed'
+    
+    db.session.commit()
+    flash('Friend removed successfully.', 'success')
+    return redirect(url_for('profile'))
