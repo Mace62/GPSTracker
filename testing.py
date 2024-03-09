@@ -413,60 +413,95 @@ class TestUserSearch(TestCase):
         # Check if the search results contain the expected username
         self.assertIn(b'jane_doe', response.data, "Search did not return expected results")
         
-class TestAddFriends(TestCase):
+
+class TestFriendRequest(unittest.TestCase):
 
     def create_app(self):
-        # Setup Flask application configuration for testing
         app.config['TESTING'] = True
         app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
         return app
 
     def setUp(self):
-        # Initialize the database and test client, and create test users
+        self.app = self.create_app()
+        self.client = self.app.test_client()
         db.create_all()
-        self.client = app.test_client()
-      # Add a couple of users to add
-        user1 = User(username='john_doe', firstname='John', lastname='Doe', email='john@example.com', password=bcrypt.generate_password_hash('test').decode('utf-8'))
-        user2 = User(username='jane_doe', firstname='Jane', lastname='Doe', email='jane@example.com', password=bcrypt.generate_password_hash('test').decode('utf-8'))
-        db.session.add_all([user1, user2])
+        
+        # Create test users
+        bcrypt = Bcrypt(self.app)
+        hashed_password1 = bcrypt.generate_password_hash("password1").decode('utf-8')
+        hashed_password2 = bcrypt.generate_password_hash("password2").decode('utf-8')
+        user1 = User(username='user1', password=hashed_password1, firstname='User', lastname='One', email='user1@example.com')
+        user2 = User(username='user2', password=hashed_password2, firstname='User', lastname='Two', email='user2@example.com')
+        db.session.add(user1)
+        db.session.add(user2)
         db.session.commit()
 
+        # Login as user1 to send friend requests
+        self.client.post('/login', data=dict(username='user1', password='password1'))
+
     def tearDown(self):
-        # Clean up the database after tests
         db.session.remove()
         db.drop_all()
 
-    def login(self, username, password):
-        # Helper method to log in a user
-        return self.client.post('/login', data={
-            'username': username,
-            'password': password
-        }, follow_redirects=True)
-
-    def logout(self):
-        # Helper method to log out the current user
-        return self.client.get('/logout', follow_redirects=True)
+    def test_send_friend_request(self):
+        # Test sending a friend request
+        response = self.client.post('/send_friend_request/user2')
+        self.assertEqual(response.status_code, 302) 
+        
+        # Verify the friend request is in the database
+        friend_request = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first()
+        self.assertIsNotNone(friend_request)
+        self.assertEqual(friend_request.status, 'pending')
 
     def test_accept_friend_request(self):
-        """Ensure that a user can accept a friend request."""
-        # User1 logs in and sends a friend request to User2
-        self.login('user1', 'User1password!')
-        user2 = User.query.filter_by(username='user2').first()
-        self.client.post(f'/send_friend_request/{user2.username}', follow_redirects=True)
-        self.logout()
+        # Assuming we have a friend request from user1 to user2
+        self.test_send_friend_request()
+        
+        # Logout user1 and login as user2 to accept the request
+        self.client.get('/logout')
+        self.client.post('/login', data=dict(username='user2', password='password2'))
 
-        # User2 logs in to accept the friend request from User1
-        self.login('user2', 'User2password!')
-        friend_request = FriendRequest.query.filter_by(sender_id=User.query.filter_by(username='user1').first().id, receiver_id=user2.id).first()
-        accept_response = self.client.post(f'/accept_friend_request/{friend_request.id}', follow_redirects=True)
-        self.assertIn(b'Friend request accepted.', accept_response.data, "Accepting friend request failed or confirmation message missing")
+        # Accept the friend request
+        request_id = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first().id
+        response = self.client.post(f'/accept_friend_request/{request_id}')
+        self.assertEqual(response.status_code, 302) 
+        
+        # Verify the friend request status is now 'accepted'
+        friend_request = FriendRequest.query.get(request_id)
+        self.assertEqual(friend_request.status, 'accepted')
+    def test_deny_friend_request(self):
+        # First, send a friend request from user1 to user2
+        self.test_send_friend_request()
+        
+        # Logout user1 and login as user2 to deny the request
+        self.client.get('/logout')
+        self.client.post('/login', data=dict(username='user2', password='password2'))
 
-        # Verify the friend request status has been updated to 'accepted'
-        updated_request = FriendRequest.query.get(friend_request.id)
-        self.assertEqual(updated_request.status, 'accepted', "Friend request was not correctly accepted")
+        # Deny the friend request
+        request_id = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first().id
+        response = self.client.post(f'/deny_friend_request/{request_id}')
+        self.assertEqual(response.status_code, 302)  # assuming redirect on success
+        
+        # Verify the friend request has been removed from the database
+        denied_request = FriendRequest.query.get(request_id)
+        self.assertIsNone(denied_request, "The friend request should be deleted after denial")
 
-        self.logout()
+    def test_cancel_friend_request(self):
+        # Send a friend request from user1 to user2
+        self.test_send_friend_request()
+
+        # Cancel the friend request
+        request_id = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first().id
+        response = self.client.post(f'/cancel_friend_request/{request_id}')
+        self.assertEqual(response.status_code, 302)  # assuming redirect on success
+        
+        # Verify the friend request has been removed from the database
+        canceled_request = FriendRequest.query.get(request_id)
+        self.assertIsNone(canceled_request, "The friend request should be deleted after cancellation")
+
+
+        
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
@@ -478,8 +513,10 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestAddFriends))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserSearch))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFriendRequest))
+
+
 
     
     

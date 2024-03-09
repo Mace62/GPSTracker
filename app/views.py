@@ -117,14 +117,21 @@ def perform_user_search(query, current_user):
             sent_request = models.FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first()
             if sent_request:
                 follow_status[user.id] = {'status': sent_request.status, 'request_id': sent_request.id}
+
             else:
                 # Check for requests received by the current user
                 received_request = models.FriendRequest.query.filter_by(sender_id=user.id, receiver_id=current_user.id).first()
                 if received_request:
-                    follow_status[user.id] = {'status': received_request.status + '_received', 'request_id': received_request.id}
-                else:
-                    follow_status[user.id] = {'status': 'not_sent'}
+                    if(received_request.status == "pending"):
+                        follow_status[user.id] = {'status': received_request.status + "_received", 'request_id': received_request.id}
 
+                    else:
+                        follow_status[user.id] = {'status': received_request.status , 'request_id': received_request.id}
+
+    # In your Flask view function, after populating 'results' and 'follow_status'
+        for user in results:
+            if user.id not in follow_status:
+                follow_status[user.id] = {'status': 'no_action', 'request_id': None}
     return results, follow_status
 
 @app.route('/profile')
@@ -144,21 +151,16 @@ def profile():
     friends.update({fr.sender for fr in received_friendships if fr.sender_id != current_user.id})
     print("His friend is",friends)
     print(received_requests)
+    results = []
+    follow_status = {}
     
     if query:
         results, follow_status = perform_user_search(query, current_user)
         # Update follow_status for each user based on friendship
-        for user in results:
-            if user in friends:
-                # This user is a friend
-                follow_status[user.id] = 'friend'
-            else:
-                # Already handled in perform_user_search: pending, accepted, not_sent, etc.
-                pass
+            
+    return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends)
 
-        return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends)
-    else:
-        return render_template('profile.html', form=form, query=None, results=[], user=current_user, follow_status={}, received_requests=received_requests, friends=friends)
+        #return render_template('profile.html', form=form, query=None, results=[], user=current_user, follow_status={}, received_requests=received_requests, friends=friends)
 
     
 

@@ -4,6 +4,8 @@
 {% extends "base.html" %}
 
 {% block content %}
+
+
 <div class="container-fluid">
   <div class="row">
     <!-- Left Column: Friend Requests and My Friends -->
@@ -40,6 +42,8 @@
         
         <h3>My Friends</h3>
         <!-- My Friends Content -->
+        {% if friends %}
+
         {% for friend in friends %}
         <div class="mb-4">
           <div class="card">
@@ -55,6 +59,9 @@
           </div>
         </div>
         {% endfor %}
+        {% else %}
+        <p>Add some friends by looking them up :) </p>
+         {% endif %}
       </div>
     </div>
 
@@ -69,6 +76,7 @@
 
         <!-- Search Results -->
         {% if query %}
+
         <h3>Search Results for "{{ query }}"</h3>
         {% for user in results %}
         <!-- User Cards -->
@@ -90,13 +98,13 @@
                             <button type="submit" class="btn btn-danger">Deny</button>
                         </form>
                       </div>
-                      {% elif follow_status[user.id].status == 'pending' %}
+                  {% elif follow_status[user.id].status == 'pending' %}
                         <!-- Cancel Request Button -->
                         <form action="{{ url_for('cancel_friend_request', request_id=follow_status[user.id].request_id) }}" method="post">
                             {{ form.csrf_token }}
                             <button type="submit" class="btn btn-secondary" >Sent Request</button>
                         </form>
-                {% elif follow_status[user.id].status == 'friend' %}
+                {% elif follow_status[user.id].status == 'accepted' %}
                     <form action="{{ url_for('remove_friend', friend_id=user.id) }}" method="post">
                         {{ form.csrf_token }}
                         <button type="submit" class="btn btn-success">Friend</button>
