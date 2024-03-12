@@ -5,6 +5,8 @@ from app.forms import LoginForm, RegisterForm, SearchForm
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
+from flask import jsonify
+
 
 #app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -137,7 +139,6 @@ def perform_user_search(query, current_user):
 @app.route('/profile')
 @login_required
 def profile():
-    print("current user= ",current_user)
     query = request.args.get('q')
     form = SearchForm() 
     received_requests = current_user.received_requests.filter_by(status='pending').all()
@@ -149,8 +150,6 @@ def profile():
     # Combine and deduplicate friends
     friends = {fr.receiver for fr in sent_friendships if fr.receiver_id != current_user.id}
     friends.update({fr.sender for fr in received_friendships if fr.sender_id != current_user.id})
-    print("His friend is",friends)
-    print(received_requests)
     results = []
     follow_status = {}
     
@@ -160,7 +159,6 @@ def profile():
             
     return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends)
 
-        #return render_template('profile.html', form=form, query=None, results=[], user=current_user, follow_status={}, received_requests=received_requests, friends=friends)
 
     
 
@@ -222,7 +220,6 @@ def accept_friend_request(request_id):
     receiver = models.User.query.get(request.receiver_id)
 
     # Now you can print the usernames of the sender and receiver
-    print(f"Sender: {sender.username}, Receiver: {receiver.username}")
     if request.receiver_id == current_user.id:
         request.status = 'accepted'
         db.session.commit()
@@ -269,3 +266,5 @@ def cancel_friend_request(request_id):
     else:
         flash('Unauthorized action or request not found.', 'danger')
     return redirect(url_for('profile'))
+
+

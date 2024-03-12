@@ -112,10 +112,9 @@
                 {% else %}
                     <form action="{{ url_for('send_friend_request', username=user.username) }}" method="post">
                         {{ form.csrf_token }}
-                        <button type="submit" class="btn btn-primary">Add Friend</button>
-                    </form>
+                        <button type="submit" class="btn btn-primary" >Add friend</button>
+                      </form>
                 {% endif %}
-              <!-- User Info and Buttons (Accept, Deny, Add Friend, etc.) -->
             </div>
           </div>
         </div>
