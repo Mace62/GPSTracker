@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build, Push, and Run Docker Images
 
 on:
   push:
@@ -6,39 +6,52 @@ on:
       - File_Upload
 
 jobs:
-  build-and-push:
+  build-and-push-app:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v2
+      - name: Check out repository
+        uses: actions/checkout@v2
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-    # image build and push
-    - name: Build and push Docker image (app)
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile
-        push: true
-        tags: rigbytrash/gpstracker:latest
+      - name: Build and push Docker image (app)
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: rigbytrash/gpstracker:latest
 
-    # image build and push for testing.py
-    - name: Build and push Docker image (testing)
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile.testing
-        push: true
-        tags: rigbytrash/gpstrackertesting:latest
+  build-and-push-testing:
+    runs-on: ubuntu-latest
+    needs: build-and-push-app
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
 
-    # run the testing Docker container
-    - name: Run testing container
-      run: |
-        docker pull rigbytrash/gpstrackertesting:latest
-        docker run --rm rigbytrash/gpstrackertesting:latest
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build and push Docker image (testing)
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile.testing
+          push: true
+          tags: rigbytrash/gpstrackertesting:latest
+
+  run-testing-container:
+    runs-on: ubuntu-latest
+    needs: build-and-push-testing
+    steps:
+      - name: Run testing container
+        run: |
+          docker pull rigbytrash/gpstrackertesting:latest
+          docker run --rm rigbytrash/gpstrackertesting:latest
