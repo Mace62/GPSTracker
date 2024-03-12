@@ -1,9 +1,9 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Images
 
 on:
   push:
     branches:
-      - File_Upload  # or any other branch you want to trigger this workflow
+      - File_Upload
 
 jobs:
   build-and-push:
@@ -19,10 +19,26 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-    - name: Build and push Docker image
+    # image build and push
+    - name: Build and push Docker image (app)
       uses: docker/build-push-action@v2
       with:
         context: .
         file: ./Dockerfile
         push: true
         tags: rigbytrash/gpstracker:latest
+
+    # image build and push for testing.py
+    - name: Build and push Docker image (testing)
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile.testing
+        push: true
+        tags: rigbytrash/gpstrackertesting:latest
+
+    # run the testing Docker container
+    - name: Run testing container
+      run: |
+        docker pull rigbytrash/gpstrackertesting:latest
+        docker run --rm rigbytrash/gpstrackertesting:latest
