@@ -1,7 +1,7 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for, send_from_directory, session
-from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm
+from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm, VerifyLoginForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
@@ -88,6 +88,29 @@ def change_subscription():
         return redirect(url_for('new_subscription'))  # Redirect to the payment route
 
     return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form)
+
+@app.route('/cancel_subscription', methods=['GET', 'POST'])
+@login_required
+def cancel_subscription():
+    name = session.get('username')
+    form = VerifyLoginForm()
+    if form.validate_on_submit():
+        user = models.User.query.filter_by(username=name).first()
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            user.has_paid = False
+            db.session.commit()
+
+            # Need user ID to reference entry for payment table to delete it
+            subscription_details = models.Subscriptions.query.filter_by(user_id = user.id).first()
+            db.session.delete(subscription_details)
+            db.session.commit()
+            return (redirect(url_for("logout")))
+        
+        else:
+            flash("Incorrect password, Please try again")
+            return(render_template("cancel_subscription.html", form=form))
+
+    return(render_template("cancel_subscription.html", form=form))
 
 @app.route('/new_subscription', methods=['GET', 'POST'])
 @login_required
@@ -184,16 +207,40 @@ def login_new_user():
         flash("Payment option not found. Please select a payment option.")
         return redirect(url_for('select_payment'))
     
-    user = models.User(
-        username=new_user_data['username'],
-        password=new_user_data['password'],
-        firstname=new_user_data['firstname'],
-        lastname=new_user_data['lastname'],
-        email=new_user_data['email']
-        # has_payed=new_user_data[]
-    )
-    db.session.add(user)
-    db.session.commit()
+    # Search by database to check if the user already exists
+    existing_user = models.User.query.filter_by(
+        models.User.username == new_user_data['username'],
+    ).first()
+
+    # if the user exists and the has paid bool is set to false (user might be retuning to the platform)
+    if existing_user and existing_user.has_paid == False:
+        # Set has_paid to true and save user
+        existing_user.has_paid = True
+        db.session.commit()
+
+        # Set the existing user as the current user
+        user = existing_user
+        
+    else:
+        user = models.User(
+            username=new_user_data['username'],
+            password=new_user_data['password'],
+            firstname=new_user_data['firstname'],
+            lastname=new_user_data['lastname'],
+            email=new_user_data['email'],
+            has_paid=True
+        )
+
+        db.session.add(user)
+        db.session.commit()
+
+    # Set session data to check if user has paid
+    session['user_has_paid'] = user.has_paid
+
+    # Seasion data to store username
+    session['username'] = user.username
+
+    # Store subscription data
     if payment_option == "Weekly":
         next_payment = datetime.utcnow() + timedelta(days=7)
     elif payment_option == "Monthly":
@@ -208,7 +255,10 @@ def login_new_user():
     db.session.add(subscription_details)
     db.session.commit()
     login_user(user)
-    flash('You have been registered and logged in successfully. Welcome ' + str(user.username) + '!')
+    if existing_user:
+        flash(f'Welcome back {existing_user.username}. Thank you for resubscribing to our services')
+    else:
+        flash(f'You have been registered and logged in successfully. Welcome {str(user.username)}!')
     return redirect(url_for('index'))
 
 
@@ -258,12 +308,17 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = models.User.query.filter_by(username=form.username.data).first()
+        user = models.User.query.filter_by(username = form.username.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             if models.Admin.query.filter_by(user_id=user.id).first():
                 login_user(user)
                 flash('Logged in as admin')
-                return redirect(url_for('admin'))   
+                return redirect(url_for('admin'))
+            
+            if user.has_paid == False:
+                return redirect(url_for('select_payment'))
+            
+            session['username'] = form.username.data
             login_user(user)
             flash('Logged in successfully.')
             return redirect(url_for('index'))
@@ -335,3 +390,9 @@ def delete_file(filename):
     db.session.query(models.GPXFile).filter(models.GPXFile.filename==filename).delete()
     db.session.commit()
     return redirect(url_for('list_user_files'))
+
+
+
+
+# def user_has_paid():
+#     user = session.

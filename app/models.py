@@ -11,7 +11,7 @@ class User(db.Model, UserMixin):
     lastname = db.Column(db.String(120), index = True, nullable = False)
     email = db.Column(db.String(120), index = True, unique = True, nullable = False)
     password = db.Column(db.String(120), index = True, nullable = False)
-    has_payed = db.Column(db.Boolean, default=False)
+    has_paid = db.Column(db.Boolean, default=True)
 
 
 class Admin(db.Model):

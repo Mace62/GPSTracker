@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Cancel Subscription</h1>
+<h6>Are you sure you want to stop paying?</h6>
+<h6>Doing this will disable your account unless you decide to start paying</h6>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<form action="" method="POST" role="form" name="Verify Login">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.password.label(class="form-control-label") }}
+        {{ form.password(class="form-control") }}
+        {% for error in form.password.errors %}
+            <span style="color: red;">{{ error }}</span><br>
+        {% endfor %}
+    </div>
+    <div class="form-group text-center">
+        {{ form.submit(class="btn btn-danger submit-button") }}
+    </div>
+
+{% endblock %}

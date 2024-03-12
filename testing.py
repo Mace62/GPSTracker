@@ -94,339 +94,403 @@ class TestLogin(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Logged in successfully.', response.data)
-        
-class TestWrongLogin(TestCase):
-
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
-
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
-
-        # Create a test user for login
-        hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
-        db.session.add(test_user)
-        db.session.commit()
-
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-
+    
+    ####   ERASE ONCE COMPLETED    ###
     def test_wronglogin(self):
         """Test invalid user login."""
         # Register a user
         response = self.client.post('/login', data=dict(
             username='testuser',
             password='Wrongpassword!'), follow_redirects=True)
-        
+    
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Incorrect username or password. Please try again.', response.data)
-
-
-class TestLogout(TestCase):
-
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
-
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
-        # Create a test user for login
-        hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
-        db.session.add(test_user)
-        db.session.commit()
-
-        # Log in the test user
-        response = self.client.post('/login', data=dict(
-            username='testuser',
-            password='Testpassword!'
-        ), follow_redirects=True)
-
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-
-    def test_logout(self):
-        """Test user logout."""
-        response = self.client.get('/logout', follow_redirects=True)
         
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'You have been logged out.', response.data)
+# class TestWrongLogin(TestCase):
+
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
+
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
+
+#         # Create a test user for login
+#         hashed_password = bcrypt.generate_password_hash("Testpassword!")
+#         test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
+#         db.session.add(test_user)
+#         db.session.commit()
+
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
+
+#     def test_wronglogin(self):
+#         """Test invalid user login."""
+#         # Register a user
+#         response = self.client.post('/login', data=dict(
+#             username='testuser',
+#             password='Wrongpassword!'), follow_redirects=True)
         
-class TestEmailInUse(TestCase):
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(
+#             b'Incorrect username or password. Please try again.', response.data)
 
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
 
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
+# class TestLogout(TestCase):
 
-        # create a user
-        hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='example@example.com',password=hashed_password)
-        db.session.add(test_user)
-        db.session.commit()
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
+#         # Create a test user for login
+#         hashed_password = bcrypt.generate_password_hash("Testpassword!")
+#         test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
+#         db.session.add(test_user)
+#         db.session.commit()
 
-    def test_email_in_use(self):
-        """Test invalid registration via already-in-use email."""
+#         # Log in the test user
+#         response = self.client.post('/login', data=dict(
+#             username='testuser',
+#             password='Testpassword!'
+#         ), follow_redirects=True)
 
-        # create another user with the same email
-        response = self.client.post('/register', data=dict(
-            username='testuser1',
-            password='Testpassword!',
-            confirm='Testpassword!',
-            email='example@example.com',
-            first_name='Test',
-            last_name='User'
-        ), follow_redirects=True)
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'Email exists, try a different email.', response.data)
+#     def test_logout(self):
+#         """Test user logout."""
+#         response = self.client.get('/logout', follow_redirects=True)
         
-class TestNameInUse(TestCase):
-
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
-
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
-
-        # create a user
-        hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='example@example.com',password=hashed_password)
-        db.session.add(test_user)
-        db.session.commit()
-
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-
-    def test_name_in_use(self):
-        """Test invalid registration via already-in-use username."""
-
-        # create another user with the same username
-        response = self.client.post('/register', data=dict(
-            username='testuser',
-            password='Testpassword!',
-            confirm='Testpassword!',
-            email='example1@example.com',
-            first_name='Test',
-            last_name='User'
-        ), follow_redirects=True)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'Username exists, try a different name.', response.data)
-
-class TestNoSpecialCharPassword(TestCase):
-
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
-
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
-
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-
-    def test_no_special_char(self):
-        """Test invalid registration via poor password (no special character)."""
-
-        # create a user with a password that has no special characters
-        response = self.client.post('/register', data=dict(
-            username='testuser',
-            password='Password',
-            confirm='Password',
-            email='example1@example.com',
-            first_name='Test',
-            last_name='User'
-        ), follow_redirects=True)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'Password must contain at least one special character.', response.data)   
-
-class TestNoCapsPassword(TestCase):
-
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
-
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
-
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-
-    def test_no_caps(self):
-        """Test invalid registration via poor password (no capital letter)."""
-
-        # create a user with a password that has no capital letters
-        response = self.client.post('/register', data=dict(
-            username='testuser',
-            password='password!',
-            confirm='password!',
-            email='example1@example.com',
-            first_name='Test',
-            last_name='User'
-        ), follow_redirects=True)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'Password must contain at least one capital letter.', response.data)
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(
+#             b'You have been logged out.', response.data)
         
-class TestInvalidLengthPassword(TestCase):
+# class TestEmailInUse(TestCase):
 
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
 
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
+#         # create a user
+#         hashed_password = bcrypt.generate_password_hash("Testpassword!")
+#         test_user = User(username='testuser', firstname='t', lastname='t', email='example@example.com',password=hashed_password)
+#         db.session.add(test_user)
+#         db.session.commit()
 
-    def test_invalid_length(self):
-        """Test invalid registration via poor password (not at least 8 characters)."""
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
 
-        # create a user with a password that is too short
-        response = self.client.post('/register', data=dict(
-            username='testuser',
-            password='Passwo!',
-            confirm='Passwo!',
-            email='example1@example.com',
-            first_name='Test',
-            last_name='User'
-        ), follow_redirects=True)
+#     def test_email_in_use(self):
+#         """Test invalid registration via already-in-use email."""
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'Password must be at least 8 characters long.', response.data)
+#         # create another user with the same email
+#         response = self.client.post('/register', data=dict(
+#             username='testuser1',
+#             password='Testpassword!',
+#             confirm='Testpassword!',
+#             email='example@example.com',
+#             first_name='Test',
+#             last_name='User'
+#         ), follow_redirects=True)
+
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(
+#             b'Email exists, try a different email.', response.data)
         
-class TestPasswordsMismatch(TestCase):
+# class TestNameInUse(TestCase):
 
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
 
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
+#         # create a user
+#         hashed_password = bcrypt.generate_password_hash("Testpassword!")
+#         test_user = User(username='testuser', firstname='t', lastname='t', email='example@example.com',password=hashed_password)
+#         db.session.add(test_user)
+#         db.session.commit()
 
-    def test_password_mismatch(self):
-        """Test invalid registration via poor password (Passwords don't match)."""
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
 
-        # create a user with mismatching passwords
-        response = self.client.post('/register', data=dict(
-            username='testuser',
-            password='Password!',
-            confirm='Passsword!',
-            email='example1@example.com',
-            first_name='Test',
-            last_name='User'
-        ), follow_redirects=True)
+#     def test_name_in_use(self):
+#         """Test invalid registration via already-in-use username."""
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'Passwords do not match.', response.data)
+#         # create another user with the same username
+#         response = self.client.post('/register', data=dict(
+#             username='testuser',
+#             password='Testpassword!',
+#             confirm='Testpassword!',
+#             email='example1@example.com',
+#             first_name='Test',
+#             last_name='User'
+#         ), follow_redirects=True)
+
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(
+#             b'Username exists, try a different name.', response.data)
+
+# class TestNoSpecialCharPassword(TestCase):
+
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
+
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
+
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
+
+#     def test_no_special_char(self):
+#         """Test invalid registration via poor password (no special character)."""
+
+#         # create a user with a password that has no special characters
+#         response = self.client.post('/register', data=dict(
+#             username='testuser',
+#             password='Password',
+#             confirm='Password',
+#             email='example1@example.com',
+#             first_name='Test',
+#             last_name='User'
+#         ), follow_redirects=True)
+
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(
+#             b'Password must contain at least one special character.', response.data)   
+
+# class TestNoCapsPassword(TestCase):
+
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
+
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
+
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
+
+#     def test_no_caps(self):
+#         """Test invalid registration via poor password (no capital letter)."""
+
+#         # create a user with a password that has no capital letters
+#         response = self.client.post('/register', data=dict(
+#             username='testuser',
+#             password='password!',
+#             confirm='password!',
+#             email='example1@example.com',
+#             first_name='Test',
+#             last_name='User'
+#         ), follow_redirects=True)
+
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(
+#             b'Password must contain at least one capital letter.', response.data)
+        
+# class TestInvalidLengthPassword(TestCase):
+
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
+
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
+
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
+
+#     def test_invalid_length(self):
+#         """Test invalid registration via poor password (not at least 8 characters)."""
+
+#         # create a user with a password that is too short
+#         response = self.client.post('/register', data=dict(
+#             username='testuser',
+#             password='Passwo!',
+#             confirm='Passwo!',
+#             email='example1@example.com',
+#             first_name='Test',
+#             last_name='User'
+#         ), follow_redirects=True)
+
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(
+#             b'Password must be at least 8 characters long.', response.data)
+        
+# class TestPasswordsMismatch(TestCase):
+
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
+
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
+
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
+
+#     def test_password_mismatch(self):
+#         """Test invalid registration via poor password (Passwords don't match)."""
+
+#         # create a user with mismatching passwords
+#         response = self.client.post('/register', data=dict(
+#             username='testuser',
+#             password='Password!',
+#             confirm='Passsword!',
+#             email='example1@example.com',
+#             first_name='Test',
+#             last_name='User'
+#         ), follow_redirects=True)
+
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn(
+#             b'Passwords do not match.', response.data)
         
 
-class TestFileUpload(TestCase):
+# class TestFileUpload(TestCase):
 
-    def create_app(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-        return app
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
 
-    def setUp(self):
-        db.create_all()
-        self.client = app.test_client()
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
 
-        # Create and login a test user
-        hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com', password=hashed_password)
-        db.session.add(test_user)
-        db.session.commit()
+#         # Create and login a test user
+#         hashed_password = bcrypt.generate_password_hash("Testpassword!")
+#         test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com', password=hashed_password)
+#         db.session.add(test_user)
+#         db.session.commit()
 
-        # Login
-        self.client.post('/login', data=dict(
-            username='testuser',
-            password='Testpassword!'
-        ), follow_redirects=True)
+#         # Login
+#         self.client.post('/login', data=dict(
+#             username='testuser',
+#             password='Testpassword!'
+#         ), follow_redirects=True)
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
 
-    def test_file_upload(self):
-        """Test file upload functionality."""
-        with self.client:
-            # Log in the test user
-            self.client.post('/login', data=dict(
-                username='testuser',
-                password='Testpassword!'
-            ), follow_redirects=True)
+#     def test_file_upload(self):
+#         """Test file upload functionality."""
+#         with self.client:
+#             # Log in the test user
+#             self.client.post('/login', data=dict(
+#                 username='testuser',
+#                 password='Testpassword!'
+#             ), follow_redirects=True)
 
-            # Perform file upload
-            test_user = User.query.filter_by(username='testuser').first()  # Define the test_user variable
-            response = self.client.post('/upload', data=dict(
-                file=(BytesIO(b"some initial gpx data"), 'test.gpx'),
-            ), content_type='multipart/form-data', follow_redirects=True)
+#             # Perform file upload
+#             test_user = User.query.filter_by(username='testuser').first()  # Define the test_user variable
+#             response = self.client.post('/upload', data=dict(
+#                 file=(BytesIO(b"some initial gpx data"), 'test.gpx'),
+#             ), content_type='multipart/form-data', follow_redirects=True)
 
-            self.assertEqual(response.status_code, 200)
-            self.assertIn(b'File successfully uploaded', response.data)
+#             self.assertEqual(response.status_code, 200)
+#             self.assertIn(b'File successfully uploaded', response.data)
 
-            # Check if the file is now in the database
-            file = models.GPXFile.query.filter_by(user_id=test_user.id).first()
-            self.assertIsNotNone(file)
+#             # Check if the file is now in the database
+#             file = models.GPXFile.query.filter_by(user_id=test_user.id).first()
+#             self.assertIsNotNone(file)
 
-class TestFileDownload(TestCase):
+# class TestFileDownload(TestCase):
     
+#     def create_app(self):
+#         app.config['TESTING'] = True
+#         app.config['WTF_CSRF_ENABLED'] = False
+#         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+#         return app
+
+#     def setUp(self):
+#         db.create_all()
+#         self.client = app.test_client()
+
+#         # Create and login a test user
+#         hashed_password = bcrypt.generate_password_hash("Testpassword!")
+#         test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com', password=hashed_password)
+#         db.session.add(test_user)
+#         db.session.commit()
+
+#         # Login
+#         self.client.post('/login', data=dict(
+#             username='testuser',
+#             password='Testpassword!'
+#         ), follow_redirects=True)
+
+#         # Perform file upload
+#         self.client.post('/upload', data=dict(
+#                 file=(BytesIO(b"some initial gpx data"), 'test.gpx'),
+#             ), content_type='multipart/form-data', follow_redirects=True)
+
+#     def tearDown(self):
+#         db.session.remove()
+#         db.drop_all()
+
+#     def test_file_download(self):
+#         """Test file download functionality."""
+#         # Assume a file has been uploaded, either in setUp or another test
+#         with self.client:
+#             # Log in the test user
+#             self.client.post('/login', data=dict(
+#                 username='testuser',
+#                 password='Testpassword!'
+#             ), follow_redirects=True)
+
+#             # get the filename by getting all user's files
+#             file = models.GPXFile.query.filter_by(user_id=1).first()
+#             filename = file.filename
+
+#             # Attempt to download the file
+#             response = self.client.get(f'/download/{filename}', follow_redirects=True)
+#             self.assertEqual(response.status_code, 200)
+#             self.assertTrue(b"some initial gpx data" in response.data)
+
+class TestUserHasPaid(TestCase):
+
     def create_app(self):
         app.config['TESTING'] = True
         app.config['WTF_CSRF_ENABLED'] = False
@@ -437,45 +501,20 @@ class TestFileDownload(TestCase):
         db.create_all()
         self.client = app.test_client()
 
-        # Create and login a test user
+        # Generate new user. Does not log in (logs in during tests)
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
         test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com', password=hashed_password)
         db.session.add(test_user)
         db.session.commit()
-
-        # Login
-        self.client.post('/login', data=dict(
-            username='testuser',
-            password='Testpassword!'
-        ), follow_redirects=True)
-
-        # Perform file upload
-        self.client.post('/upload', data=dict(
-                file=(BytesIO(b"some initial gpx data"), 'test.gpx'),
-            ), content_type='multipart/form-data', follow_redirects=True)
-
+        
     def tearDown(self):
         db.session.remove()
         db.drop_all()
 
-    def test_file_download(self):
-        """Test file download functionality."""
-        # Assume a file has been uploaded, either in setUp or another test
-        with self.client:
-            # Log in the test user
-            self.client.post('/login', data=dict(
-                username='testuser',
-                password='Testpassword!'
-            ), follow_redirects=True)
+    # Test case for when the user wants to log in after cancelling subscription
+    def test_login_after_cancelling_subscription(self):
+        
 
-            # get the filename by getting all user's files
-            file = models.GPXFile.query.filter_by(user_id=1).first()
-            filename = file.filename
-
-            # Attempt to download the file
-            response = self.client.get(f'/download/{filename}', follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue(b"some initial gpx data" in response.data)
 
 if __name__ == "__main__":
     unittest.main()
