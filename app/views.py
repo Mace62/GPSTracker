@@ -408,7 +408,6 @@ def upload_file():
 
         # Save the file with the new unique name
         file.save(os.path.join(upload_folder, filename))
-        print("HAS SAVED")
 
         gpx_file = GPXFile(
             name=filename, filepath=os.path.join(upload_folder, filename))
@@ -439,7 +438,6 @@ def list_user_files():
 @app.route('/generate_map/<filename>')
 @login_required
 def generate_map(filename):
-    print("generate map called")
     user_folder = os.path.join(
         app.root_path, 'static', 'uploads', str(current_user.id))
     if not os.path.exists(os.path.join(user_folder, filename)):
@@ -512,13 +510,13 @@ def generate_map(filename):
     with open(os.path.join(user_folder, map_file), 'w') as f:
         f.write(modified_html_content)
 
-    if track_points:
-        total_distance = total_distance_for_gpx(track_points)
-        print(total_distance)
-        total_time = total_time_for_gpx(track_points)
-        print(total_time)
-        average_speed = average_speed_for_gpx(track_points)
-        print("Average Speed:", average_speed, "km/h")
+    # if track_points:
+    #     total_distance = total_distance_for_gpx(track_points)
+    #     print(total_distance)
+    #     total_time = total_time_for_gpx(track_points)
+    #     print(total_time)
+    #     average_speed = average_speed_for_gpx(track_points)
+    #     print("Average Speed:", average_speed, "km/h")
 
     map_file = f'{filename}_map.html'
     run_map.save(os.path.join(user_folder, map_file))

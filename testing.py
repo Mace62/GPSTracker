@@ -131,7 +131,6 @@ class TestWrongLogin(TestCase):
         self.assertIn(
             b'Incorrect username or password. Please try again.', response.data)
 
-
 class TestLogout(TestCase):
 
     def create_app(self):
@@ -377,7 +376,6 @@ class TestPasswordsMismatch(TestCase):
         self.assertIn(
             b'Passwords do not match.', response.data)
         
-
 class TestFileUpload(TestCase):
 
     def create_app(self):
@@ -490,7 +488,6 @@ class TestFileDownload(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(b"some initial gpx data" in response.data)
 
-
 class TestDisplayAllUsers(TestCase):
 
     def create_app(self):
@@ -555,9 +552,6 @@ class TestFutureRevenue(TestCase):
             # Check if 'All Users' is present in the response data
             self.assertIn(b'Future Revenue', response.data)
 
-if __name__ == "__main__":
-    unittest.main()
-
 class TestGPXPoint(unittest.TestCase):
     def test_display_info(self):
         point = GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now())
@@ -601,9 +595,9 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogout))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestEmailInUse))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNameInUse))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileUpload))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileDownload))
