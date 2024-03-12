@@ -489,18 +489,10 @@ class TestDisplayAllUsers(TestCase):
     def setUp(self):
         db.create_all()
         self.client = app.test_client()
-        # Create and login a test user
-        hashed_password = bcrypt.generate_password_hash("Admin123!")
-        test_user = User(username='admin1', firstname='admin', lastname='admin', email='admin@admin.com', password=hashed_password)
-        db.session.add(test_user)
-        db.session.commit()
-        admin = Admin(user_id=test_user.id)
-        db.session.add(admin)
-        db.session.commit()
 
         # Login
         self.client.post('/login', data=dict(
-            username='admin1',
+            username='admin',
             password='Admin123!'
         ), follow_redirects=True)
 
@@ -515,12 +507,40 @@ class TestDisplayAllUsers(TestCase):
             response = self.client.get('/all_users', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
 
-            # Print response data for debugging
-            print(response.data)
-
             # Check if 'All Users' is present in the response data
             self.assertIn(b'All Users', response.data)
 
+class TestFutureRevenue(TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test_app.db'
+        return app
+
+    def setUp(self):
+        db.create_all()
+        self.client = app.test_client()
+
+        # Login
+        self.client.post('/login', data=dict(
+            username='admin',
+            password='Admin123!'
+        ), follow_redirects=True)
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        
+    def test_future_revenue(self):
+        """Test future revenue functionality."""
+        with self.client:
+            # Log in the test user
+            response = self.client.get('/future_revenue', follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+
+            # Check if 'All Users' is present in the response data
+            self.assertIn(b'Future Revenue', response.data)
 
 if __name__ == "__main__":
     unittest.main()
@@ -539,4 +559,5 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileUpload))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileDownload))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestDisplayAllUsers))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFutureRevenue))
     unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)

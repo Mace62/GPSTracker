@@ -50,6 +50,8 @@ def index():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
+    if models.Admin.query.filter_by(user_id=current_user.id).first():
+        return redirect(url_for('admin'))
     return render_template('index.html')
 
 
@@ -258,7 +260,7 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    if models.Admin.query.count() == 0:
+    if models.User.query.count() == 0:
         new_admin = models.User(username="admin", password=bcrypt.generate_password_hash("Admin123!"), firstname="admin", lastname="admin", email="admin@admin.com")
         db.session.add(new_admin)
         db.session.commit()
@@ -307,6 +309,59 @@ def all_users():
     user_subscriptions = models.Subscriptions.query.filter(models.Subscriptions.user_id.in_(user_ids)).all()
     
     return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions)
+
+
+@app.route('/future_revenue', methods=['GET', 'POST'])
+def future_revenue():
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('index'))
+    
+    # Initialize graph data
+    graph_data = {
+        'labels': [],
+        'data': []
+    }
+    data = [0] * 53
+
+    # Reset current date to original value
+    current_date = datetime.utcnow()
+
+    # Calculate the end date for the next year
+    end_date = current_date + timedelta(days=365)
+
+    # Generate labels for weeks 1 to 52
+    for week_number in range(1, 53):
+        week_label = f"Week {week_number}"
+        graph_data['labels'].append(week_label)
+
+    # Iterate through subscriptions
+    for subscription in models.Subscriptions.query.all():
+        # Skip subscriptions that have already been renewed in the next year
+        if subscription.payment_date >= end_date:
+            continue
+
+        # Get the week number of the payment date
+        payment_week = subscription.payment_date
+        payment_week_number = payment_week.isocalendar()[1]
+        weeks_away = payment_week_number - current_date.isocalendar()[1]
+        if subscription.subscription_type == "Weekly":
+            # Add revenue to the payment week and every week after up to week 52
+            for i in range(weeks_away, 53):
+                data[i] += 1.99
+        elif subscription.subscription_type == "Monthly":
+            # Add revenue to the payment week and every week after up to week 52
+            for i in range(weeks_away, 53, 4):
+                data[i] += 6.99
+        else:
+            data[weeks_away] += 79.99
+
+    graph_data['data'] = data
+    return render_template('future_revenue.html', graph_data=graph_data)
+
+
+
+
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
