@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField, HiddenField
 from flask_wtf.file import FileField, FileRequired
 from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField
 from wtforms.validators import DataRequired, ValidationError, Email
@@ -17,7 +18,7 @@ class RegisterForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name', validators=[DataRequired()])
     email = EmailField('Email', validators=[DataRequired(), Email()])
-    submit = SubmitField('Register')
+    submit = SubmitField('Next')
 
     def validate_password(form, field):
         password = field.data
@@ -31,6 +32,11 @@ class RegisterForm(FlaskForm):
         
         if not any(char.isupper() for char in password):
             raise ValidationError('Password must contain at least one capital letter.')
+
+# Payment form to get preferred payment option
+class PaymentForm(FlaskForm):
+    payment_option = HiddenField('selected_option')
+    submit = SubmitField('Submit')
         
 class UploadForm(FlaskForm):
     file = FileField('GPX File', validators=[

@@ -1,5 +1,7 @@
 from flask import *
 from app import app, models, db
+from flask import render_template, flash, request, redirect, url_for, send_from_directory, session
+from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm
 from app.models import GPXFile
 from flask import render_template, flash, request, redirect, url_for, send_from_directory
 from app.forms import LoginForm, RegisterForm, UploadForm
@@ -9,6 +11,9 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
+from datetime import datetime, timedelta
+import stripe
+from sqlalchemy import not_
 import math
 import folium
 from geopy.distance import geodesic
@@ -16,10 +21,21 @@ from datetime import datetime
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
+# Setting global secret key for Stripe API
+stripe.api_key = "sk_test_51OlhekAu65yEau3hdrHvRwjs8vb8GM2NJnjLuJQYuGHeqgi5nYseoo8D2jIE4qKCvs7EPhzQIOJfQKQUej6SYD0600PGbY7CmA"
+
+# Setting global dictionary for subscription products and their respective product ID's
+SUBSCRIPTION_PRODUCTS_ID = {
+    "Weekly": "price_1OnnSpAu65yEau3hfP2yBSke",
+    "Monthly": "price_1OnnTpAu65yEau3hCLoW1nZP",
+    "Yearly": "price_1OnpOoAu65yEau3hfk7nCPw1",
+}
+
 bcrypt = Bcrypt(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
 
 
 @login_manager.user_loader
@@ -30,7 +46,181 @@ def load_user(user_id):
 @app.route('/')
 @login_required
 def index():
+    subscriptions = models.Subscriptions.query.all()
+    if subscriptions:
+        for subscription in subscriptions:
+            if subscription.payment_date < datetime.utcnow():
+                if subscription.subscription_type == "Weekly":
+                    subscription.payment_date += timedelta(days=7)
+                elif subscription.subscription_type == "Monthly":
+                    subscription.payment_date += timedelta(days=30)
+                else:
+                    subscription.payment_date += timedelta(days=365)
+                db.session.commit()
+    if models.Admin.query.filter_by(user_id=current_user.id).first():
+        return redirect(url_for('admin'))
     return render_template('index.html')
+
+
+# Need a page to land on to select what the user wants to pay
+@app.route('/select_payment', methods=['GET', 'POST'])
+def select_payment():
+    form = PaymentForm(request.form)
+
+    new_user_data = session.get('new_user')
+
+    if not new_user_data:
+        flash("User data not found. Please register first.")
+        return redirect(url_for('register'))
+    if form.validate_on_submit():
+        payment_option = request.form.get('payment_option')
+        session['payment_option'] = payment_option
+        return redirect(url_for('payment'))  # Redirect to the payment route
+
+    return render_template("/select_payment.html", form=form)
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    subscription_type = subscription.subscription_type
+    return render_template('profile.html', subscription_type=subscription_type)
+
+@app.route('/change_subscription', methods=['GET', 'POST'])
+@login_required
+def change_subscription():
+    form = PaymentForm()
+    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    next_payment_date = subscription.payment_date.strftime("%Y-%m-%d")
+    if form.validate_on_submit():
+        payment_option = request.form.get('payment_option')
+        session['payment_option'] = payment_option
+        return redirect(url_for('new_subscription'))  # Redirect to the payment route
+
+    return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form)
+
+@app.route('/new_subscription', methods=['GET', 'POST'])
+@login_required
+def new_subscription():
+    try:
+        # Retrieve form data from session
+        payment_option = session.get('payment_option')
+        if not payment_option:
+            # Redirect user to select a payment option
+            return redirect(url_for('change_subscription'))
+
+        # Set up a Stripe checkout session with the uniquely selected product
+        # Stripe's checkout session will take care of the card payment
+        checkout_session = stripe.checkout.Session.create(
+            line_items = [
+                {
+                    "price": SUBSCRIPTION_PRODUCTS_ID[payment_option],
+                    "quantity": 1
+                }
+            ],
+            mode="subscription",
+            success_url = url_for('change_tariff', _external=True),
+            cancel_url = url_for('change_subscription', _external=True)
+        )
+
+    except Exception as e:
+        return str(e), 403
+    
+    return redirect(checkout_session.url, code=303)
+
+@app.route('/change_tariff', methods=['GET', 'POST'])
+@login_required
+def change_tariff():
+    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    payment_option = session.get('payment_option')
+    subscription.subscription_type = payment_option
+    if subscription.subscription_type == "Weekly":
+        subscription.payment_date += timedelta(days=7)
+    elif subscription.subscription_type == "Monthly":
+        subscription.payment_date += timedelta(days=30)
+    else:
+        subscription.payment_date += timedelta(days=365)
+    db.session.commit()
+    flash('Your subscription has been updated successfully.')
+    return redirect(url_for('profile'))
+
+
+# Redirect route for the Stripe payment screen
+@app.route('/payment', methods=['GET', 'POST'])
+def payment():
+    try:
+        new_user_data = session.get('new_user')
+
+        if not new_user_data:
+            flash("User data not found. Please register first.")
+            return redirect(url_for('register'))
+        
+        # Retrieve form data from session
+        payment_option = session.get('payment_option')
+        if not payment_option:
+            # Redirect user to select a payment option
+            return redirect(url_for('select_payment'))
+
+        # Set up a Stripe checkout session with the uniquely selected product
+        # Stripe's checkout session will take care of the card payment
+        checkout_session = stripe.checkout.Session.create(
+            line_items = [
+                {
+                    "price": SUBSCRIPTION_PRODUCTS_ID[payment_option],
+                    "quantity": 1
+                }
+            ],
+            mode="subscription",
+            success_url = url_for('login_new_user', _external=True),
+            cancel_url = url_for('register', _external=True)
+        )
+
+    except Exception as e:
+        return str(e), 403
+    
+    return redirect(checkout_session.url, code=303)
+
+@app.route('/login_new_user')
+def login_new_user():
+    new_user_data = session.get('new_user')
+
+    if not new_user_data:
+        flash("User data not found. Please register first.")
+        return redirect(url_for('register'))
+    
+    payment_option = session.get('payment_option')
+
+    if not payment_option:
+        flash("Payment option not found. Please select a payment option.")
+        return redirect(url_for('select_payment'))
+    
+    user = models.User(
+        username=new_user_data['username'],
+        password=new_user_data['password'],
+        firstname=new_user_data['firstname'],
+        lastname=new_user_data['lastname'],
+        email=new_user_data['email']
+    )
+    db.session.add(user)
+    db.session.commit()
+    if payment_option == "Weekly":
+        next_payment = datetime.utcnow() + timedelta(days=7)
+    elif payment_option == "Monthly":
+        next_payment = datetime.utcnow() + timedelta(days=30)
+    else:
+        next_payment = datetime.utcnow() + timedelta(days=365)
+    subscription_details = models.Subscriptions(
+        user_id=user.id,
+        subscription_type=payment_option,
+        payment_date=next_payment
+    )
+    db.session.add(subscription_details)
+    db.session.commit()
+    login_user(user)
+    flash('You have been registered and logged in successfully. Welcome ' + str(user.username) + '!')
+    return redirect(url_for('index'))
+
 
 
 @app.route('/logout')
@@ -62,6 +252,15 @@ def register():
                 return render_template('register.html', form=form)
 
             # hash password
+            hashed_password = bcrypt.generate_password_hash(form.password.data)
+            session['new_user'] = {
+                'username': form.username.data,
+                'password': hashed_password,
+                'firstname': form.first_name.data,
+                'lastname': form.last_name.data,
+                'email': form.email.data
+            }
+            return render_template('select_payment.html', form=PaymentForm())
             hashed_password = bcrypt.generate_password_hash(
                 form.password.data)
             new_user = models.User(username=form.username.data,
@@ -83,6 +282,13 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
+    if models.User.query.count() == 0:
+        new_admin = models.User(username="admin", password=bcrypt.generate_password_hash("Admin123!"), firstname="admin", lastname="admin", email="admin@admin.com")
+        db.session.add(new_admin)
+        db.session.commit()
+        admin = models.Admin(user_id=new_admin.id)
+        db.session.add(admin)
+        db.session.commit()
     if form.validate_on_submit():
         user = models.User.query.filter_by(
             username=form.username.data).first()
@@ -103,7 +309,83 @@ def login():
 @app.route('/admin')
 @login_required
 def admin():
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('index'))
     return render_template('admin.html')
+
+
+@app.route('/all_users')
+@login_required
+def all_users():
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('index'))
+    # Get all user IDs who are admins
+    admin_user_ids = [admin.user_id for admin in models.Admin.query.all()]
+
+    # Get all users who are not admins
+    non_admin_users = models.User.query.filter(not_(models.User.id.in_(admin_user_ids))).all()
+
+    # Get all user IDs
+    user_ids = [user.id for user in non_admin_users]
+
+    # Get all subscriptions of the users
+    user_subscriptions = models.Subscriptions.query.filter(models.Subscriptions.user_id.in_(user_ids)).all()
+    
+    return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions)
+
+
+@app.route('/future_revenue', methods=['GET', 'POST'])
+def future_revenue():
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('index'))
+    
+    # Initialize graph data
+    graph_data = {
+        'labels': [],
+        'data': []
+    }
+    data = [0] * 53
+
+    # Reset current date to original value
+    current_date = datetime.utcnow()
+
+    # Calculate the end date for the next year
+    end_date = current_date + timedelta(days=365)
+
+    # Generate labels for weeks 1 to 52
+    for week_number in range(1, 53):
+        week_label = f"Week {week_number}"
+        graph_data['labels'].append(week_label)
+
+    # Iterate through subscriptions
+    for subscription in models.Subscriptions.query.all():
+        # Skip subscriptions that have already been renewed in the next year
+        if subscription.payment_date >= end_date:
+            continue
+
+        # Get the week number of the payment date
+        payment_week = subscription.payment_date
+        payment_week_number = payment_week.isocalendar()[1]
+        weeks_away = payment_week_number - current_date.isocalendar()[1]
+        if subscription.subscription_type == "Weekly":
+            # Add revenue to the payment week and every week after up to week 52
+            for i in range(weeks_away, 53):
+                data[i] += 1.99
+        elif subscription.subscription_type == "Monthly":
+            # Add revenue to the payment week and every week after up to week 52
+            for i in range(weeks_away, 53, 4):
+                data[i] += 6.99
+        else:
+            data[weeks_away] += 79.99
+
+    graph_data['data'] = data
+    return render_template('future_revenue.html', graph_data=graph_data)
+
+
+
 
 
 @app.route('/upload', methods=['GET', 'POST'])
