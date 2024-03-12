@@ -20,6 +20,7 @@ Flask-SQLAlchemy==2.5.1
 Flask-Testing==0.8.1
 Flask-WhooshAlchemy==0.56
 Flask-WTF==1.0.1
+gpxpy=1.6.2
 greenlet==2.0.2
 idna==3.6
 immutables==0.19
