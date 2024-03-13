@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - File_Upload
+      - Main
 
 jobs:
   build-and-push-app:
