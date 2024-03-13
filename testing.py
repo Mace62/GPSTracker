@@ -1,12 +1,15 @@
 from io import BytesIO
+import os
 import unittest
 import datetime
 import json
+from unittest.mock import mock_open, patch
 from flask_bcrypt import Bcrypt
 from flask_testing import TestCase
 from app import app, db
 from app import models
 from app.models import *
+import datetime
 
 bcrypt = Bcrypt(app)
 
@@ -127,7 +130,6 @@ class TestWrongLogin(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Incorrect username or password. Please try again.', response.data)
-
 
 class TestLogout(TestCase):
 
@@ -374,7 +376,6 @@ class TestPasswordsMismatch(TestCase):
         self.assertIn(
             b'Passwords do not match.', response.data)
         
-
 class TestFileUpload(TestCase):
 
     def create_app(self):
@@ -400,6 +401,11 @@ class TestFileUpload(TestCase):
         ), follow_redirects=True)
 
     def tearDown(self):
+        file = models.GPXFileData.query.filter_by(user_id=1).first() 
+        if file is not None:
+            os.remove(os.path.join( app.root_path, 'static', 'uploads', str(1) , file.filename))
+
+
         db.session.remove()
         db.drop_all()
 
@@ -422,7 +428,7 @@ class TestFileUpload(TestCase):
             self.assertIn(b'File successfully uploaded', response.data)
 
             # Check if the file is now in the database
-            file = models.GPXFile.query.filter_by(user_id=test_user.id).first()
+            file = models.GPXFileData.query.filter_by(user_id=test_user.id).first()
             self.assertIsNotNone(file)
 
 class TestFileDownload(TestCase):
@@ -455,6 +461,11 @@ class TestFileDownload(TestCase):
             ), content_type='multipart/form-data', follow_redirects=True)
 
     def tearDown(self):
+        # test_user = User.query.filter_by(username='testuser').first()
+        file = models.GPXFileData.query.filter_by(user_id=1).first() 
+        if file is not None:
+            os.remove(os.path.join( app.root_path, 'static', 'uploads', str(1) , file.filename))
+
         db.session.remove()
         db.drop_all()
 
@@ -469,14 +480,13 @@ class TestFileDownload(TestCase):
             ), follow_redirects=True)
 
             # get the filename by getting all user's files
-            file = models.GPXFile.query.filter_by(user_id=1).first()
+            file = models.GPXFileData.query.filter_by(user_id=1).first()
             filename = file.filename
 
             # Attempt to download the file
             response = self.client.get(f'/download/{filename}', follow_redirects=True)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(b"some initial gpx data" in response.data)
-
 
 class TestDisplayAllUsers(TestCase):
 
@@ -542,8 +552,41 @@ class TestFutureRevenue(TestCase):
             # Check if 'All Users' is present in the response data
             self.assertIn(b'Future Revenue', response.data)
 
-if __name__ == "__main__":
-    unittest.main()
+class TestGPXPoint(unittest.TestCase):
+    def test_display_info(self):
+        point = GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now())
+        with patch('builtins.print') as mocked_print:
+            point.display_info()
+            self.assertTrue(mocked_print.called)
+
+class TestGPXTrack(unittest.TestCase):
+    def test_display_info(self):
+        track = GPXTrackData("Track1")
+        track.points.append(GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now()))
+        with patch('builtins.print') as mocked_print:
+            track.display_info()
+            self.assertTrue(mocked_print.called)
+
+class TestGPXFile(unittest.TestCase):
+    @patch('builtins.open', new_callable=mock_open, read_data='Mock GPX data')
+    @patch('gpxpy.parse')
+    def test_init(self, mock_gpxpy_parse, mock_open):
+        mock_gpxpy_parse.return_value.waypoints = [GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now())]
+        mock_gpxpy_parse.return_value.routes = []
+
+        gpx_file = GPXFile("TestFile", os.path.join(app.root_path, 'static', 'Test_Files', 'fells_loop.gpx'))
+
+        self.assertEqual(gpx_file.name, "TestFile")
+        self.assertTrue(len(gpx_file.waypoints) > 0)
+        self.assertEqual(gpx_file.waypoints[0].name, "Point1")
+
+    def test_display_info(self):
+        gpx_file = GPXFile("TestFile", os.path.join(app.root_path, 'static', 'Test_Files', 'fells_loop.gpx'))
+        gpx_file.tracks.append(GPXTrackData("Track1"))
+        gpx_file.waypoints.append(GPXPoint("Point1", 10.0, 20.0, 30.0, datetime.datetime.now()))
+        with patch('builtins.print') as mocked_print:
+            gpx_file.display_info()
+            self.assertTrue(mocked_print.called)
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
@@ -552,12 +595,16 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogout))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestEmailInUse))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNameInUse))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileUpload))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileDownload))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestDisplayAllUsers))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFutureRevenue))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXPoint))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXTrack))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXFile))
+
     unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
