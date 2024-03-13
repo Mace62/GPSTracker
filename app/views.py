@@ -524,6 +524,14 @@ def generate_map(filename):
             previous_elevation = point.elevation
         stats[f"Total elevation gain for track {track.name}"] = total_elevation_gain
 
+        # Calculate elevation data
+        elevation_data = []
+        for track in tracks:
+            track_points = models.GPXTrackPoint.query.filter_by(track_id=track.id).all()
+            elevation_data.append({
+                'name': track.name,
+                'elevation': [point.elevation for point in track_points]
+            })
 
     # add legend in top right corner
     run_map.add_child(folium.LayerControl(
@@ -548,7 +556,7 @@ def generate_map(filename):
     run_map.save(os.path.join(user_folder, map_file))
 
     # Redirect to the route that will serve the map
-    return stats
+    return stats, elevation_data
 
 
 @app.route('/check_map_status/<filename>')
@@ -579,13 +587,13 @@ def serve_map(filename):
 @app.route('/view/<filename>')
 @login_required
 def view(filename):
-    stats = generate_map(filename)
+    stats, elevation_data = generate_map(filename)
     # generate_map(filename)
     user_folder = os.path.join(
         app.root_path, 'static', 'uploads', str(current_user.id))
     map_file = f'{filename}_map.html'
     map_url = url_for('serve_map', filename=map_file)
-    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats)
+    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats, elevation_data=elevation_data)
 
 
 @app.route('/download/<filename>')

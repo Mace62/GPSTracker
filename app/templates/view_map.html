@@ -18,6 +18,39 @@
         {% endfor %}
     </div>
 
+    <div id="elevation-charts">
+        {% for data in elevation_data %}
+            <h3>{{ data.name }}</h3>
+            <canvas id="elevation-chart-{{ loop.index }}"></canvas>
+            <script>
+                var ctx = document.getElementById('elevation-chart-{{ loop.index }}').getContext('2d');
+                var elevationData = {{ data.elevation | tojson }};
+                var elevationChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from(Array(elevationData.length).keys()), // Assuming each elevation point corresponds to a track point
+                        datasets: [{
+                            label: 'Elevation',
+                            data: elevationData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 3,
+                            lineTension: 0,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            </script>
+        {% endfor %}
+    </div>
+
     <script>
         document.getElementById('loading').style.display = 'block';
     
