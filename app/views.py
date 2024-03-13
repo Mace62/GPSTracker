@@ -17,7 +17,8 @@ from sqlalchemy import not_
 import math
 import folium
 from geopy.distance import geodesic
-from datetime import datetime
+import pandas as pd
+import altair as alt
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -487,6 +488,7 @@ def generate_map(filename):
 
     colors = ["blue", "red", "green", "orange", "purple"]
     # create a feature group for tracks
+    stats = {}
     for i, track in enumerate(tracks):
         fg_tracks = folium.FeatureGroup(name=track.name).add_to(run_map)
         track_points = models.GPXTrackPoint.query.filter_by(
@@ -498,6 +500,30 @@ def generate_map(filename):
         # create a polyline with a different color for each track
         folium.PolyLine(track_coords, color=colors[i % len(colors)],
                         weight=4.5, opacity=1).add_to(fg_tracks)
+        
+        stats[track.name] = ''
+
+        # Calculate total distance for this track
+        total_distance = total_distance_for_gpx(track_points)
+        stats[f"Total distance for track {track.name}"] = "{:.2f} km".format(total_distance)
+
+        # Calculate total time for this track
+        total_time = total_time_for_gpx(track_points)
+        stats[f"Total time for track {track.name}"] = "{} hrs".format(total_time)
+
+        # Calculate average speed for this track
+        average_speed = average_speed_for_gpx(track_points)
+        stats[f"Average Speed for track {track.name}"] = "{:.2f} km/h".format(average_speed)
+
+            # Calculate total elevation gain for this track
+        total_elevation_gain = 0
+        previous_elevation = track_points[0].elevation
+        for point in track_points:
+            if point.elevation > previous_elevation:
+                total_elevation_gain += point.elevation - previous_elevation
+            previous_elevation = point.elevation
+        stats[f"Total elevation gain for track {track.name}"] = total_elevation_gain
+
 
     # add legend in top right corner
     run_map.add_child(folium.LayerControl(
@@ -518,19 +544,11 @@ def generate_map(filename):
     with open(os.path.join(user_folder, map_file), 'w') as f:
         f.write(modified_html_content)
 
-    # if track_points:
-    #     total_distance = total_distance_for_gpx(track_points)
-    #     print(total_distance)
-    #     total_time = total_time_for_gpx(track_points)
-    #     print(total_time)
-    #     average_speed = average_speed_for_gpx(track_points)
-    #     print("Average Speed:", average_speed, "km/h")
-
     map_file = f'{filename}_map.html'
     run_map.save(os.path.join(user_folder, map_file))
 
     # Redirect to the route that will serve the map
-    return redirect(url_for('serve_map', filename=map_file))
+    return stats
 
 
 @app.route('/check_map_status/<filename>')
@@ -561,12 +579,13 @@ def serve_map(filename):
 @app.route('/view/<filename>')
 @login_required
 def view(filename):
-    generate_map(filename)
+    stats = generate_map(filename)
+    # generate_map(filename)
     user_folder = os.path.join(
         app.root_path, 'static', 'uploads', str(current_user.id))
     map_file = f'{filename}_map.html'
     map_url = url_for('serve_map', filename=map_file)
-    return render_template('view_map.html', map_url=map_url, filename=filename)
+    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats)
 
 
 @app.route('/download/<filename>')

@@ -11,6 +11,13 @@
     <!-- iframe initially hidden -->
     <iframe id="mapFrame" src="" style="width: 100%; height: 600px; display: none;"></iframe>
 
+    <div id="stats">
+        <h2>Track Stats</h2>
+        {% for stat_name, stat_value in stats.items() %}
+            <p>{{ stat_name }}: {{ stat_value }}</p>
+        {% endfor %}
+    </div>
+
     <script>
         document.getElementById('loading').style.display = 'block';
     
