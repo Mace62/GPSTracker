@@ -642,3 +642,4 @@ def average_speed_for_gpx(gpx_points):
     # Calculate average speed in km/h
     average_speed = total_distance / total_time_hours
     return average_speed
+
