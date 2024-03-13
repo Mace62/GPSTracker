@@ -37,7 +37,6 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return models.User.query.get(int(user_id))
@@ -83,22 +82,27 @@ def select_payment():
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    subscription = models.Subscriptions.query.filter_by(
+        user_id=current_user.id).first()
     subscription_type = subscription.subscription_type
     return render_template('profile.html', subscription_type=subscription_type)
+
 
 @app.route('/change_subscription', methods=['GET', 'POST'])
 @login_required
 def change_subscription():
     form = PaymentForm()
-    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    subscription = models.Subscriptions.query.filter_by(
+        user_id=current_user.id).first()
     next_payment_date = subscription.payment_date.strftime("%Y-%m-%d")
     if form.validate_on_submit():
         payment_option = request.form.get('payment_option')
         session['payment_option'] = payment_option
-        return redirect(url_for('new_subscription'))  # Redirect to the payment route
+        # Redirect to the payment route
+        return redirect(url_for('new_subscription'))
 
     return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form)
+
 
 @app.route('/new_subscription', methods=['GET', 'POST'])
 @login_required
@@ -113,26 +117,28 @@ def new_subscription():
         # Set up a Stripe checkout session with the uniquely selected product
         # Stripe's checkout session will take care of the card payment
         checkout_session = stripe.checkout.Session.create(
-            line_items = [
+            line_items=[
                 {
                     "price": SUBSCRIPTION_PRODUCTS_ID[payment_option],
                     "quantity": 1
                 }
             ],
             mode="subscription",
-            success_url = url_for('change_tariff', _external=True),
-            cancel_url = url_for('change_subscription', _external=True)
+            success_url=url_for('change_tariff', _external=True),
+            cancel_url=url_for('change_subscription', _external=True)
         )
 
     except Exception as e:
         return str(e), 403
-    
+
     return redirect(checkout_session.url, code=303)
+
 
 @app.route('/change_tariff', methods=['GET', 'POST'])
 @login_required
 def change_tariff():
-    subscription = models.Subscriptions.query.filter_by(user_id=current_user.id).first()
+    subscription = models.Subscriptions.query.filter_by(
+        user_id=current_user.id).first()
     payment_option = session.get('payment_option')
     subscription.subscription_type = payment_option
     if subscription.subscription_type == "Weekly":
@@ -155,7 +161,7 @@ def payment():
         if not new_user_data:
             flash("User data not found. Please register first.")
             return redirect(url_for('register'))
-        
+
         # Retrieve form data from session
         payment_option = session.get('payment_option')
         if not payment_option:
@@ -165,21 +171,22 @@ def payment():
         # Set up a Stripe checkout session with the uniquely selected product
         # Stripe's checkout session will take care of the card payment
         checkout_session = stripe.checkout.Session.create(
-            line_items = [
+            line_items=[
                 {
                     "price": SUBSCRIPTION_PRODUCTS_ID[payment_option],
                     "quantity": 1
                 }
             ],
             mode="subscription",
-            success_url = url_for('login_new_user', _external=True),
-            cancel_url = url_for('register', _external=True)
+            success_url=url_for('login_new_user', _external=True),
+            cancel_url=url_for('register', _external=True)
         )
 
     except Exception as e:
         return str(e), 403
-    
+
     return redirect(checkout_session.url, code=303)
+
 
 @app.route('/login_new_user')
 def login_new_user():
@@ -188,13 +195,13 @@ def login_new_user():
     if not new_user_data:
         flash("User data not found. Please register first.")
         return redirect(url_for('register'))
-    
+
     payment_option = session.get('payment_option')
 
     if not payment_option:
         flash("Payment option not found. Please select a payment option.")
         return redirect(url_for('select_payment'))
-    
+
     user = models.User(
         username=new_user_data['username'],
         password=new_user_data['password'],
@@ -218,9 +225,9 @@ def login_new_user():
     db.session.add(subscription_details)
     db.session.commit()
     login_user(user)
-    flash('You have been registered and logged in successfully. Welcome ' + str(user.username) + '!')
+    flash('You have been registered and logged in successfully. Welcome ' +
+          str(user.username) + '!')
     return redirect(url_for('index'))
-
 
 
 @app.route('/logout')
@@ -283,7 +290,8 @@ def register():
 def login():
     form = LoginForm()
     if models.User.query.count() == 0:
-        new_admin = models.User(username="admin", password=bcrypt.generate_password_hash("Admin123!"), firstname="admin", lastname="admin", email="admin@admin.com")
+        new_admin = models.User(username="admin", password=bcrypt.generate_password_hash(
+            "Admin123!"), firstname="admin", lastname="admin", email="admin@admin.com")
         db.session.add(new_admin)
         db.session.commit()
         admin = models.Admin(user_id=new_admin.id)
@@ -325,14 +333,16 @@ def all_users():
     admin_user_ids = [admin.user_id for admin in models.Admin.query.all()]
 
     # Get all users who are not admins
-    non_admin_users = models.User.query.filter(not_(models.User.id.in_(admin_user_ids))).all()
+    non_admin_users = models.User.query.filter(
+        not_(models.User.id.in_(admin_user_ids))).all()
 
     # Get all user IDs
     user_ids = [user.id for user in non_admin_users]
 
     # Get all subscriptions of the users
-    user_subscriptions = models.Subscriptions.query.filter(models.Subscriptions.user_id.in_(user_ids)).all()
-    
+    user_subscriptions = models.Subscriptions.query.filter(
+        models.Subscriptions.user_id.in_(user_ids)).all()
+
     return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions)
 
 
@@ -341,7 +351,7 @@ def future_revenue():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
         return redirect(url_for('index'))
-    
+
     # Initialize graph data
     graph_data = {
         'labels': [],
@@ -383,9 +393,6 @@ def future_revenue():
 
     graph_data['data'] = data
     return render_template('future_revenue.html', graph_data=graph_data)
-
-
-
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -434,6 +441,7 @@ def list_user_files():
     file_entries = models.GPXFileData.query.filter_by(
         user_id=current_user.id).all()
     return render_template('list_files.html', files=files, file_entries=file_entries)
+
 
 @app.route('/generate_map/<filename>')
 @login_required
@@ -524,17 +532,21 @@ def generate_map(filename):
     # Redirect to the route that will serve the map
     return redirect(url_for('serve_map', filename=map_file))
 
+
 @app.route('/check_map_status/<filename>')
 def check_map_status(filename):
-    user_folder = os.path.join(app.root_path, 'static', 'uploads', str(current_user.id))
+    user_folder = os.path.join(
+        app.root_path, 'static', 'uploads', str(current_user.id))
     map_file = f'{filename}_map.html'
     map_ready = os.path.exists(os.path.join(user_folder, map_file))
     return jsonify({'map_ready': map_ready})
 
+
 @app.route('/serve_map/<filename>')
 @login_required
 def serve_map(filename):
-    user_folder = os.path.join(app.root_path, 'static', 'uploads', str(current_user.id))
+    user_folder = os.path.join(
+        app.root_path, 'static', 'uploads', str(current_user.id))
     file_path = os.path.join(user_folder, filename)
     if not os.path.exists(file_path):
         return 'Map file not found', 404
@@ -545,11 +557,13 @@ def serve_map(filename):
 
     return Response(generate(), mimetype='text/html')
 
+
 @app.route('/view/<filename>')
 @login_required
 def view(filename):
     generate_map(filename)
-    user_folder = os.path.join(app.root_path, 'static', 'uploads', str(current_user.id))
+    user_folder = os.path.join(
+        app.root_path, 'static', 'uploads', str(current_user.id))
     map_file = f'{filename}_map.html'
     map_url = url_for('serve_map', filename=map_file)
     return render_template('view_map.html', map_url=map_url, filename=filename)
