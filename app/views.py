@@ -27,7 +27,7 @@ SUBSCRIPTION_PRODUCTS_ID = {
 bcrypt = Bcrypt(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'landing'
 
 
 
@@ -35,6 +35,10 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return models.User.query.get(int(user_id))
 
+
+@app.route('/landing')
+def landing():
+    return render_template('landing.html')
 
 @app.route('/')
 @login_required
@@ -50,8 +54,6 @@ def index():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
-    if models.Admin.query.filter_by(user_id=current_user.id).first():
-        return redirect(url_for('admin'))
     return render_template('index.html')
 
 
