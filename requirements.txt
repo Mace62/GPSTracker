@@ -2,6 +2,9 @@ alembic==1.7.7
 Babel==2.11.0
 bcrypt==4.0.1
 blinker==1.5
+branca==0.5.0
+certifi==2021.5.30
+charset-normalizer==2.0.12
 click==8.0.4
 contextvars==2.4
 coverage==6.2
@@ -20,6 +23,10 @@ Flask-SQLAlchemy==2.5.1
 Flask-Testing==0.8.1
 Flask-WhooshAlchemy==0.56
 Flask-WTF==1.0.1
+folium==0.13.0
+geographiclib==1.52
+geopy==2.2.0
+gpxpy==1.6.2
 greenlet==2.0.2
 idna==3.6
 immutables==0.19
@@ -29,10 +36,13 @@ itsdangerous==2.0.1
 Jinja2==3.0.3
 Mako==1.1.6
 MarkupSafe==2.0.1
+numpy==1.19.5
 pytz==2024.1
+requests==2.27.1
 SQLAlchemy==1.4.51
 stripe==2.66.0
 typing_extensions==4.1.1
+urllib3==1.26.18
 visitor==0.1.3
 Werkzeug==2.0.3
 Whoosh==2.7.4
