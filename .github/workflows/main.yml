@@ -3,8 +3,11 @@ name: Build, Push, and Run Docker Images
 on:
   push:
     branches:
-      - File_Upload
-      - Main
+      - '*'
+  pull_request:
+    branches:
+      - main
+    types: [closed]
 
 jobs:
   build-and-push-app:
@@ -25,7 +28,9 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: rigbytrash/gpstracker:latest
+          tags: rigbytrash/gpstracker:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
+          build-args:
+            TAG_NAME=${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
 
   build-and-push-testing:
     runs-on: ubuntu-latest
@@ -46,7 +51,9 @@ jobs:
           context: .
           file: ./Dockerfile.testing
           push: true
-          tags: rigbytrash/gpstrackertesting:latest
+          tags: rigbytrash/gpstrackertesting:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
+          build-args:
+            TAG_NAME=${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
 
   run-testing-container:
     runs-on: ubuntu-latest
@@ -54,5 +61,5 @@ jobs:
     steps:
       - name: Run testing container
         run: |
-          docker pull rigbytrash/gpstrackertesting:latest
-          docker run --rm rigbytrash/gpstrackertesting:latest
+          docker pull rigbytrash/gpstrackertesting:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
+          docker run --rm rigbytrash/gpstrackertesting:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
