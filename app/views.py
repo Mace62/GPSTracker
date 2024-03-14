@@ -30,7 +30,7 @@ SUBSCRIPTION_PRODUCTS_ID = {
 bcrypt = Bcrypt(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'landing'
+login_manager.login_view = 'login'
 
 
 @login_manager.user_loader
@@ -38,13 +38,13 @@ def load_user(user_id):
     return models.User.query.get(int(user_id))
 
 
-@app.route('/landing')
+@app.route('/')
 def landing():
     return render_template('landing.html')
 
-@app.route('/')
+@app.route('/homepage')
 @login_required
-def index():
+def homepage():
     subscriptions = models.Subscriptions.query.all()
     if subscriptions:
         for subscription in subscriptions:
@@ -56,7 +56,7 @@ def index():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
-    return render_template('index.html')
+    return render_template('homepage.html')
 
 
 # Need a page to land on to select what the user wants to pay
@@ -281,7 +281,7 @@ def login_new_user():
         flash(f'Welcome back {existing_user.username}. Thank you for resubscribing to our services')
     else:
         flash(f'You have been registered and logged in successfully. Welcome {str(user.username)}!')
-    return redirect(url_for('index'))
+    return redirect(url_for('homepage'))
 
 
 @app.route('/logout')
@@ -322,18 +322,6 @@ def register():
                 'email': form.email.data
             }
             return render_template('select_payment.html', form=PaymentForm())
-            hashed_password = bcrypt.generate_password_hash(
-                form.password.data)
-            new_user = models.User(username=form.username.data,
-                                   password=hashed_password,
-                                   firstname=form.first_name.data,
-                                   lastname=form.last_name.data,
-                                   email=form.email.data)
-            db.session.add(new_user)
-            db.session.commit()
-            login_user(new_user)
-            flash("Registered and logged in successfully.")
-            return redirect(url_for('index'))
         except Exception as e:
             flash(f"Error: {e}")
 
@@ -366,7 +354,7 @@ def login():
             
             login_user(user)
             flash('Logged in successfully.')
-            return redirect(url_for('index'))
+            return redirect(url_for('homepage'))
         else:
             flash('Incorrect username or password. Please try again.', 'danger')
 
@@ -378,7 +366,7 @@ def login():
 def admin():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
     return render_template('admin.html')
 
 
@@ -387,7 +375,7 @@ def admin():
 def all_users():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
     # Get all user IDs who are admins
     admin_user_ids = [admin.user_id for admin in models.Admin.query.all()]
 
@@ -406,10 +394,11 @@ def all_users():
 
 
 @app.route('/future_revenue', methods=['GET', 'POST'])
+@login_required
 def future_revenue():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
 
     # Initialize graph data
     graph_data = {

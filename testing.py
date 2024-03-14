@@ -634,36 +634,42 @@ class TestUserHasNotLoggedIn(TestCase):
         db.drop_all()
 
     def testing_redirects_to_login_if_user_has_no_details(self):
+        '''Testing for redirects to login page if user has not logged in'''
 
         # This is a blacklist for URL's to not test when looking at login redirects
         # Add stuff here if you think the URL does not need the @login_required decorator
-        login_redirects_not_to_test = ["/login_new_user", "/register", "/login", "/static/bootstrap/<path:filename>", "/static/<path:filename>", "/landing"]
+        login_redirects_not_to_test = ["/login_new_user", "/register", "/login", "/static/bootstrap/<path:filename>", "/static/<path:filename>", "/"]
+    
+        ###############################         TO BE CHANGED BY THOSE WHO KNOW         ###########################################
+        # HAMZA
+        login_redirects_not_to_test_because_its_under_construction = ["/check_map_status/<filename>"]
 
         with self.client as c:
             # Looking across all URL's
             for rule in app.url_map.iter_rules():
-                print(rule.rule)
-                # # Ignoring blacklisted URL's
-                # if rule.rule not in login_redirects_not_to_test:
-                #     print(rule.rule)
+                # print(rule.rule)
+                # Ignoring blacklisted URL's
+                # HAMZA GET RID OF THE login_redirects_not_to_test_because_its_under_construction FROM THE IF STATEMENT BELOW
+                if rule.rule not in login_redirects_not_to_test and rule.rule not in login_redirects_not_to_test_because_its_under_construction:
+                    # print(rule.rule)
                     
-                #     response = c.get(rule.rule)
-                #     # Check if the redirect location is the login page
-                #     expected_redirect_location = url_for('login', _external=True)
-                #     url = response.headers['Location']
+                    response = c.get(rule.rule)
+                    # Check if the redirect location is the login page
+                    expected_redirect_location = url_for('login', _external=True)
+                    url = response.headers['Location']
 
-                #     if '?' in url:
-                #         # Split the URL at the question mark
-                #         url_parts = url.split('?')
+                    if '?' in url:
+                        # Split the URL at the question mark
+                        url_parts = url.split('?')
 
-                #         # Extract the part before the question mark
-                #         url_before_question_mark = url_parts[0]
-                #     else:
-                #         # If there is no question mark, use the URL as it is
-                #         url_before_question_mark = url
+                        # Extract the part before the question mark
+                        url_before_question_mark = url_parts[0]
+                    else:
+                        # If there is no question mark, use the URL as it is
+                        url_before_question_mark = url
 
-                #     self.assertTrue(response.status_code in [301, 302, 303, 305, 307])
-                #     self.assertEqual(url_before_question_mark, expected_redirect_location)
+                    self.assertTrue(response.status_code in [301, 302, 303, 305, 307])
+                    self.assertEqual(url_before_question_mark, expected_redirect_location)
 
 
 class TestFutureRevenue(TestCase):
