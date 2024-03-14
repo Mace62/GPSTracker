@@ -1,0 +1,32 @@
+{% extends "admin_base.html" %}
+{% block content %}
+    <h1>Future Revenue</h1>
+    <body>
+        <canvas id="myChart"></canvas>
+
+        <script>
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var graphData = {{ graph_data | tojson }};
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: graphData.labels,
+                    datasets: [{
+                        label: 'Sample Data',
+                        data: graphData.data,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        </script>
+    </body>
+{% endblock %}

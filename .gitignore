@@ -8,5 +8,4 @@ migrations
 *.log
 /static/uploads/**
 /static/uploads/
-app/__pycache__/views.cpython-36.pyc
-**/uploadsb
+**/uploads

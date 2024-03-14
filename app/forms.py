@@ -18,7 +18,7 @@ class RegisterForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name', validators=[DataRequired()])
     email = EmailField('Email', validators=[DataRequired(), Email()])
-    submit = SubmitField('Register')
+    submit = SubmitField('Next')
 
     def validate_password(form, field):
         password = field.data
