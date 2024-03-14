@@ -501,19 +501,19 @@ def generate_map(filename):
         folium.PolyLine(track_coords, color=colors[i % len(colors)],
                         weight=4.5, opacity=1).add_to(fg_tracks)
         
-        stats[track.name] = ''
+        stats[track.name] = 'STATS'
 
         # Calculate total distance for this track
         total_distance = total_distance_for_gpx(track_points)
-        stats[f"Total distance for track {track.name}"] = "{:.2f} km".format(total_distance)
+        stats[f"Total distance  {track.name}"] = "{:.2f} km".format(total_distance)
 
         # Calculate total time for this track
         total_time = total_time_for_gpx(track_points)
-        stats[f"Total time for track {track.name}"] = "{} hrs".format(total_time)
+        stats[f"Total time  {track.name}"] = "{} hrs".format(total_time)
 
         # Calculate average speed for this track
         average_speed = average_speed_for_gpx(track_points)
-        stats[f"Average Speed for track {track.name}"] = "{:.2f} km/h".format(average_speed)
+        stats[f"Average Speed  {track.name}"] = "{:.2f} km/h".format(average_speed)
 
             # Calculate total elevation gain for this track
         total_elevation_gain = 0
@@ -522,7 +522,7 @@ def generate_map(filename):
             if point.elevation > previous_elevation:
                 total_elevation_gain += point.elevation - previous_elevation
             previous_elevation = point.elevation
-        stats[f"Total elevation gain for track {track.name}"] = total_elevation_gain
+        stats[f"Total elevation gain  {track.name}"] = "{:.2f} ft".format(total_elevation_gain)
 
         # Calculate elevation data
         elevation_data = []

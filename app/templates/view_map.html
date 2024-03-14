@@ -1,7 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+    h1 {
+        font-family: 'Jura', sans-serif; /* Add this line */
+        font-weight: bold; /* Make the font bold */
+        text-align: center;
+    }
+    #mapFrame {
+        border-radius: 10px; /* Adjust the value as per your preference */
+    }
+    h2 {
+        font-family: 'Jura', sans-serif; /* Add this line */
+        font-weight: bold; /* Make the font bold */
+        margin-top: 30px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    h3 {
+        font-family: 'Jura', sans-serif; /* Add this line */
+        font-weight: bold; /* Make the font bold */
+        margin-top: 50px;
+        text-align: center;
+    }
+    /* .stat-box {
+        border: 1px solid black;
+        margin: 20px;
+        padding: 10px;
+        display: inline-block;
+        background-color: #132B2C; 
+        color: #FFFFFF; 
+        text-align: center; 
+        font-family: Jura;
+        width: 200px; 
+        border-radius: 10px; 
+    } */
+    #stats {
+            font-family: Jura, sans-serif;
+        }
+        #stats h2 {
+            color: #000000;
+        }
+        #stats table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 20px;
+
+        }
+        /* #stats tr {
+            background-color: rgb(6, 38, 3);
+            color: #ddd;
+        } */
+
+        #stats td {
+            border: 2px solid #000000;
+            padding: 8px;
+            text-align: center;
+            font-size: 24px;
+        }
+        #stats tr:nth-child(5n+1) {
+            background-color: black;
+            color: white;
+        }
+        #stats tr:nth-child(5n+1) td {
+            /* text-align: right; */
+            font-size: 28px; 
+        }
+        #stats tr:nth-child(5n+1):hover {
+            background-color: #000000;
+        }
+        #stats tr:hover {
+            background-color: #ddd;
+        }
+</style>
+
     <h1>{{ filename }}</h1>
-    <h1>Map View</h1>
+    <h1>JOURNEY</h1>
 
     <!-- Loading Indicator -->
     <div id="loading" style="display: none;">
@@ -13,41 +86,49 @@
 
     <div id="stats">
         <h2>Track Stats</h2>
-        {% for stat_name, stat_value in stats.items() %}
-            <p>{{ stat_name }}: {{ stat_value }}</p>
-        {% endfor %}
+        <table>
+            {% for stat_name, stat_value in stats.items() %}
+            <tr>
+                <td>{{ stat_name }}</td>
+                <td>{{ stat_value }}</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
 
-    <div id="elevation-charts">
+    <h3>ELEVATION CHARTS</h3>
+    <div id="elevation-charts" style="display: flex; flex-direction: column; margin-top: 10px;">
         {% for data in elevation_data %}
-            <h3>{{ data.name }}</h3>
-            <canvas id="elevation-chart-{{ loop.index }}"></canvas>
-            <script>
-                var ctx = document.getElementById('elevation-chart-{{ loop.index }}').getContext('2d');
-                var elevationData = {{ data.elevation | tojson }};
-                var elevationChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: Array.from(Array(elevationData.length).keys()), // Assuming each elevation point corresponds to a track point
-                        datasets: [{
-                            label: 'Elevation',
-                            data: elevationData,
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 3,
-                            lineTension: 0,
-                            pointRadius: 0
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
+            <div style="margin: 10px;">
+                <h3>{{ data.name }}</h3>
+                <canvas id="elevation-chart-{{ loop.index }}"></canvas>
+                <script>
+                    var ctx = document.getElementById('elevation-chart-{{ loop.index }}').getContext('2d');
+                    var elevationData = {{ data.elevation | tojson }};
+                    var elevationChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Array.from(Array(elevationData.length).keys()), // Assuming each elevation point corresponds to a track point
+                            datasets: [{
+                                label: 'Elevation',
+                                data: elevationData,
+                                backgroundColor: 'rgba(255, 255, 255, 1)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 3,
+                                lineTension: 0,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
                             }
                         }
-                    }
-                });
-            </script>
+                    });
+                </script>
+            </div>
         {% endfor %}
     </div>
 
