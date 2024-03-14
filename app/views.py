@@ -150,10 +150,17 @@ def new_subscription():
             cancel_url=url_for('change_subscription', _external=True)
         )
 
-    except Exception as e:
-        return str(e), 403
+        return redirect(checkout_session.url, code=303)
 
-    return redirect(checkout_session.url, code=303)
+    except stripe.error.StripeError as e:
+        # Stripe error handling
+        flash('An error occurred while processing your payment. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    except Exception as e:
+        # Other generic errors
+        flash('An unexpected error occurred. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
 
 
 @app.route('/change_tariff', methods=['GET', 'POST'])
@@ -205,10 +212,19 @@ def payment():
             cancel_url=url_for('register', _external=True)
         )
 
-    except Exception as e:
-        return str(e), 403
+        return redirect(checkout_session.url, code=303)
 
-    return redirect(checkout_session.url, code=303)
+    except stripe.error.StripeError as e:
+        # Stripe error handling
+        flash('An error occurred while processing your payment. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    except Exception as e:
+        # Other generic errors
+        flash('An unexpected error occurred. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    
 
 
 @app.route('/login_new_user')

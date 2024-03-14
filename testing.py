@@ -639,19 +639,15 @@ class TestUserHasNotLoggedIn(TestCase):
         # This is a blacklist for URL's to not test when looking at login redirects
         # Add stuff here if you think the URL does not need the @login_required decorator
         login_redirects_not_to_test = ["/login_new_user", "/register", "/login", "/static/bootstrap/<path:filename>", "/static/<path:filename>", "/"]
-    
-        ###############################         TO BE CHANGED BY THOSE WHO KNOW         ###########################################
-        # HAMZA
         login_redirects_not_to_test_because_its_under_construction = ["/check_map_status/<filename>"]
 
         with self.client as c:
             # Looking across all URL's
             for rule in app.url_map.iter_rules():
-                # print(rule.rule)
                 # Ignoring blacklisted URL's
-                # HAMZA GET RID OF THE login_redirects_not_to_test_because_its_under_construction FROM THE IF STATEMENT BELOW
+
+                ###### GET RID OF THE login_redirects_not_to_test_because_its_under_construction FROM THE IF STATEMENT BELOW #####
                 if rule.rule not in login_redirects_not_to_test and rule.rule not in login_redirects_not_to_test_because_its_under_construction:
-                    # print(rule.rule)
                     
                     response = c.get(rule.rule)
                     # Check if the redirect location is the login page
@@ -742,23 +738,23 @@ class TestGPXFile(unittest.TestCase):
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestWrongLogin))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogout))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestEmailInUse))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNameInUse))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileUpload))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileDownload))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserHasPaid))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestWrongLogin))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogout))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestEmailInUse))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNameInUse))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileUpload))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFileDownload))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserHasPaid))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserHasNotLoggedIn))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestDisplayAllUsers))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFutureRevenue))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXPoint))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXTrack))
-    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXFile))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestDisplayAllUsers))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFutureRevenue))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXPoint))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXTrack))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXFile))
 
     unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
