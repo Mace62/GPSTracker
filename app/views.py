@@ -57,10 +57,12 @@ def select_payment():
     form = PaymentForm(request.form)
 
     new_user_data = session.get('new_user')
+    username = session.get('username')
 
-    if not new_user_data:
-        flash("User data not found. Please register first.")
-        return redirect(url_for('register'))
+    if not (new_user_data or username):
+        flash('You must log in to continue')
+        return redirect(url_for('login'))
+    
     if form.validate_on_submit():
         payment_option = request.form.get('payment_option')
         session['payment_option'] = payment_option
@@ -108,7 +110,7 @@ def cancel_subscription():
         
         else:
             flash("Incorrect password, Please try again")
-            return(render_template("cancel_subscription.html", form=form))
+            return(redirect(url_for("cancel_subscription")))
 
     return(render_template("cancel_subscription.html", form=form))
 
@@ -163,10 +165,11 @@ def change_tariff():
 def payment():
     try:
         new_user_data = session.get('new_user')
+        username = session.get('username')
 
-        if not new_user_data:
-            flash("User data not found. Please register first.")
-            return redirect(url_for('register'))
+        if not (new_user_data or username):
+            flash('You must log in to continue')
+            return redirect(url_for('login'))
         
         # Retrieve form data from session
         payment_option = session.get('payment_option')
@@ -195,21 +198,14 @@ def payment():
 
 @app.route('/login_new_user')
 def login_new_user():
-    new_user_data = session.get('new_user')
 
-    if not new_user_data:
-        flash("User data not found. Please register first.")
-        return redirect(url_for('register'))
-    
+    username = session.get('username')
+    new_user_data = session.get('new_user')
     payment_option = session.get('payment_option')
 
-    if not payment_option:
-        flash("Payment option not found. Please select a payment option.")
-        return redirect(url_for('select_payment'))
-    
     # Search by database to check if the user already exists
-    existing_user = models.User.query.filter_by(
-        models.User.username == new_user_data['username'],
+    existing_user = models.User.query.filter(
+        models.User.username == username
     ).first()
 
     # if the user exists and the has paid bool is set to false (user might be retuning to the platform)
@@ -220,7 +216,18 @@ def login_new_user():
 
         # Set the existing user as the current user
         user = existing_user
-        
+    
+    # If the user is jumping to this page without registration data
+    elif not new_user_data:
+        flash("User data not found. Please register first.")
+        return redirect(url_for('register'))
+    
+    # If the user is jumping to this page without payment data
+    elif not payment_option:
+        flash("Payment option not found. Please select a payment option.")
+        return redirect(url_for('select_payment'))
+    
+    # If we are dealing with a new user
     else:
         user = models.User(
             username=new_user_data['username'],
@@ -310,15 +317,16 @@ def login():
     if form.validate_on_submit():
         user = models.User.query.filter_by(username = form.username.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
+            session['username'] = form.username.data
+
             if models.Admin.query.filter_by(user_id=user.id).first():
                 login_user(user)
                 flash('Logged in as admin')
                 return redirect(url_for('admin'))
             
             if user.has_paid == False:
-                return redirect(url_for('select_payment'))
+                return redirect(url_for('select_payment'), code=302)
             
-            session['username'] = form.username.data
             login_user(user)
             flash('Logged in successfully.')
             return redirect(url_for('index'))
@@ -333,6 +341,7 @@ def admin():
     return render_template('admin.html')
 
 @app.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload_file():
     form = UploadForm()
     if request.method == 'POST' and form.validate_on_submit():

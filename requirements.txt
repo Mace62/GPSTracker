@@ -29,6 +29,7 @@ itsdangerous==2.0.1
 Jinja2==3.0.3
 Mako==1.1.6
 MarkupSafe==2.0.1
+pyppeteer==0.2.6
 pytz==2024.1
 SQLAlchemy==1.4.51
 stripe==2.66.0
