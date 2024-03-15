@@ -138,10 +138,6 @@ def cancel_subscription():
             user.has_paid = False
             db.session.commit()
 
-            # # Need user ID to reference entry for payment table to delete it
-            # subscription_details = models.Subscriptions.query.filter_by(user_id = user.id).first()
-            # db.session.delete(subscription_details)
-            # db.session.commit()
             flash("Your account will be locked after the subscription has expired")
             return (redirect(url_for("homepage")))
         
