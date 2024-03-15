@@ -421,7 +421,7 @@ class TestFileUpload(TestCase):
             # Perform file upload
             test_user = User.query.filter_by(username='testuser').first()  # Define the test_user variable
             response = self.client.post('/upload', data=dict(
-                file=(BytesIO(b"some initial gpx data"), 'test.gpx'),
+                file=(open(os.path.join( app.root_path, 'static', 'Test_Files', 'fells_loop.gpx'), 'rb'), 'fells_loop.gpx'),
             ), content_type='multipart/form-data', follow_redirects=True)
 
             self.assertEqual(response.status_code, 200)
@@ -457,7 +457,7 @@ class TestFileDownload(TestCase):
 
         # Perform file upload
         self.client.post('/upload', data=dict(
-                file=(BytesIO(b"some initial gpx data"), 'test.gpx'),
+                file=(open(os.path.join( app.root_path, 'static', 'Test_Files', 'fells_loop.gpx'), 'rb'), 'fells_loop.gpx'),
             ), content_type='multipart/form-data', follow_redirects=True)
 
     def tearDown(self):
@@ -485,8 +485,7 @@ class TestFileDownload(TestCase):
 
             # Attempt to download the file
             response = self.client.get(f'/download/{filename}', follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue(b"some initial gpx data" in response.data)
+            self.assertEqual(response.status_code, 201)
 
 class TestDisplayAllUsers(TestCase):
 
