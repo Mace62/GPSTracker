@@ -485,7 +485,7 @@ class TestFileDownload(TestCase):
 
             # Attempt to download the file
             response = self.client.get(f'/download/{filename}', follow_redirects=True)
-            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.status_code, 200)
 
 class TestDisplayAllUsers(TestCase):
 
