@@ -44,11 +44,6 @@ def load_user(user_id):
 
 @app.route('/landing')
 def landing():
-    return render_template('landing.html')
-
-@app.route('/')
-@login_required
-def index():
     subscriptions = models.Subscriptions.query.all()
     if subscriptions:
         for subscription in subscriptions:
@@ -60,6 +55,11 @@ def index():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
+    return render_template('landing.html')
+
+@app.route('/')
+@login_required
+def index():
     return render_template('index.html')
 
 
