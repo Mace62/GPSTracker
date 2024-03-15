@@ -606,4 +606,6 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXTrack))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXFile))
 
-    unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
+    result = unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
+    if not result.wasSuccessful():
+        exit(1)
