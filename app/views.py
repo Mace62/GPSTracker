@@ -45,7 +45,25 @@ def landing():
 @app.route('/homepage')
 @login_required
 def homepage():
+    username = session.get('username')
+    user = models.User.query.filter_by(username = username).first()
+    user_subscription = models.Subscriptions.query.filter_by(user_id = user.id).first()
+    
+    # Check if the user needs to be locked out because they have unsubscribed
+    if user:
+        if user_subscription and user_subscription.payment_date < datetime.utcnow() and user.has_paid == False:
+            # Delete payment data and logout user
+            # Deleting instead of dereferencing because past subscription data is useless for the admin
+            db.session.delete(user_subscription)
+            db.session.commit()
+            return redirect(url_for("logout"))
+        
+        elif not user_subscription:
+            return redirect(url_for("logout"))
+
+
     subscriptions = models.Subscriptions.query.all()
+    # Loops to refresh the time to pay
     if subscriptions:
         for subscription in subscriptions:
             if subscription.payment_date < datetime.utcnow():
@@ -108,20 +126,26 @@ def change_subscription():
 def cancel_subscription():
     name = session.get('username')
     form = VerifyLoginForm()
+    user = models.User.query.filter_by(username=name).first()
+
+    if user and user.has_paid == False:
+            flash("You have already cancelled your subscription")
+            return (redirect(url_for("homepage")))
+    
     if form.validate_on_submit():
-        user = models.User.query.filter_by(username=name).first()
+
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             user.has_paid = False
             db.session.commit()
 
-            # Need user ID to reference entry for payment table to delete it
-            subscription_details = models.Subscriptions.query.filter_by(user_id = user.id).first()
-            db.session.delete(subscription_details)
-            db.session.commit()
-            return (redirect(url_for("logout")))
+            # # Need user ID to reference entry for payment table to delete it
+            # subscription_details = models.Subscriptions.query.filter_by(user_id = user.id).first()
+            # db.session.delete(subscription_details)
+            # db.session.commit()
+            flash("Your account will be locked after the subscription has expired")
+            return (redirect(url_for("homepage")))
         
         else:
-            flash("Incorrect password, Please try again")
             return(redirect(url_for("cancel_subscription")))
 
     return(render_template("cancel_subscription.html", form=form))
@@ -357,6 +381,7 @@ def login():
         db.session.commit()
     if form.validate_on_submit():
         user = models.User.query.filter_by(username = form.username.data).first()
+        # users_subscription - models.Subscriptions.query.filter_by
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             session['username'] = form.username.data
 
@@ -365,7 +390,7 @@ def login():
                 flash('Logged in as admin')
                 return redirect(url_for('admin'))
             
-            if user.has_paid == False:
+            if not models.Subscriptions.query.filter_by(user_id=user.id).first():
                 return redirect(url_for('select_payment'), code=302)
             
             login_user(user)
