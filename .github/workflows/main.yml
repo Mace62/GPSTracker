@@ -62,4 +62,8 @@ jobs:
       - name: Run testing container
         run: |
           docker pull rigbytrash/gpstrackertesting:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
-          docker run --rm rigbytrash/gpstrackertesting:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
+          docker run --rm rigbytrash/gpstrackertesting:${{ github.ref_name == 'main' && 'latest' || github.ref_name }} | tee output.txt
+          if grep -q "FAIL" output.txt; then
+            echo "Test failed"
+            exit 1
+          fi
