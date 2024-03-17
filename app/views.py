@@ -1,7 +1,7 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for
-from app.forms import LoginForm, RegisterForm, SearchForm
+from app.forms import LoginForm, RegisterForm, SearchForm, GroupCreationForm
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
@@ -33,6 +33,7 @@ def show():
 @app.route('/homepage')
 @login_required
 def homepage():
+    print(get_friends_choices(current_user.id))
     return render_template('homepage.html')
 
 @app.route('/logout')
@@ -104,6 +105,18 @@ def admin():
 
 
 
+def get_friends_choices(user_id):
+    sent_friend_requests = db.session.query(models.FriendRequest.receiver_id).filter(models.FriendRequest.sender_id == user_id, models.FriendRequest.status == 'accepted').all()
+    received_friend_requests = db.session.query(models.FriendRequest.sender_id).filter(models.FriendRequest.receiver_id == user_id, models.FriendRequest.status == 'accepted').all()
+
+    friend_ids = [user_id for (user_id,) in sent_friend_requests + received_friend_requests]
+
+    friends = models.User.query.filter(models.User.id.in_(friend_ids)).all() if friend_ids else []
+
+    return [(friend.id, friend.username) for friend in friends]
+
+
+
 
 def perform_user_search(query, current_user):
     results = []
@@ -130,7 +143,6 @@ def perform_user_search(query, current_user):
                     else:
                         follow_status[user.id] = {'status': received_request.status , 'request_id': received_request.id}
 
-    # In your Flask view function, after populating 'results' and 'follow_status'
         for user in results:
             if user.id not in follow_status:
                 follow_status[user.id] = {'status': 'no_action', 'request_id': None}
@@ -145,11 +157,13 @@ def profile():
     # Fetch received friend requests
 
     # Fetch friends (where the current user is either the sender or receiver of an accepted friend request)
-    sent_friendships = current_user.sent_requests.filter_by(status='accepted').all()
-    received_friendships = current_user.received_requests.filter_by(status='accepted').all()
-    # Combine and deduplicate friends
-    friends = {fr.receiver for fr in sent_friendships if fr.receiver_id != current_user.id}
-    friends.update({fr.sender for fr in received_friendships if fr.sender_id != current_user.id})
+    # sent_friendships = current_user.sent_requests.filter_by(status='accepted').all()
+    # received_friendships = current_user.received_requests.filter_by(status='accepted').all()
+    # # Combine and deduplicate friends
+    # friends = {fr.receiver for fr in sent_friendships if fr.receiver_id != current_user.id}
+    # friends.update({fr.sender for fr in received_friendships if fr.sender_id != current_user.id})
+    friend_ids = [friend_id for friend_id, _ in get_friends_choices(current_user.id)]
+    friends = models.User.query.filter(models.User.id.in_(friend_ids)).all() if friend_ids else []
     results = []
     follow_status = {}
     
@@ -268,3 +282,47 @@ def cancel_friend_request(request_id):
     return redirect(url_for('profile'))
 
 
+def create_group(user_ids, group_name):
+    # Create a new group instance
+    new_group = models.Group(name=group_name)
+    db.session.add(new_group)
+    db.session.flush()
+    
+    # Add the current user and selected friends to the group
+    for user_id in user_ids:
+        # Ensure no attempt to add non-existent users
+        if models.User.query.get(user_id):
+            new_group_member = models.GroupMember(group_id=new_group.id, user_id=user_id)
+            db.session.add(new_group_member)
+    
+    db.session.commit()
+    return new_group    
+
+
+
+@app.route('/group', methods=['GET', 'POST'])
+@login_required
+def group():
+    form = GroupCreationForm()
+    
+    user_groups = models.GroupMember.query.filter_by(user_id=current_user.id).all()
+    # Extract group IDs for querying Group details
+    group_ids = [membership.group_id for membership in user_groups]
+    groups = models.Group.query.filter(models.Group.id.in_(group_ids)).all() if group_ids else []
+
+
+    if form.validate_on_submit():
+        group_user_ids = request.form.get('selected_friends').split(',') 
+        group_user_ids.append(str(current_user.id))
+        group_name = form.group_name.data  # Name of the group
+
+        create_group(group_user_ids,group_name)
+        
+        
+
+        
+
+        return redirect(url_for('group'))  # Redirect as appropriate
+
+    friends_choices = get_friends_choices(current_user.id)
+    return render_template('group.html', form=form, groups=groups, friends_choices=friends_choices)

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField
+from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField,SelectMultipleField,HiddenField
 from wtforms.validators import DataRequired, ValidationError, Email
 
 class LoginForm(FlaskForm):
@@ -33,3 +33,12 @@ class RegisterForm(FlaskForm):
 class SearchForm(FlaskForm):
     query = StringField('Search')
     submit = SubmitField('Search')
+    
+# class GroupCreationForm(FlaskForm):
+#     friends = SelectMultipleField('Select Friends', coerce=int)
+#     submit = SubmitField('Create Group')
+
+class GroupCreationForm(FlaskForm):
+    group_name = StringField('Group name', validators=[DataRequired()])
+    selected_friends = HiddenField()  # Stores IDs of selected friends
+    submit = SubmitField('Create Group')

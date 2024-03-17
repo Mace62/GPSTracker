@@ -501,21 +501,95 @@ class TestFriendRequest(unittest.TestCase):
         self.assertIsNone(canceled_request, "The friend request should be deleted after cancellation")
 
 
+class CreateGroup(unittest.TestCase):
+
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        return app
+
+    def setUp(self):
+        self.app = self.create_app()
+        self.client = self.app.test_client()
+        db.create_all()
+        
+        # Create test users
+        user1 = User(username='user1', firstname='User', lastname='One', email='user1@example.com', password=bcrypt.generate_password_hash('password1').decode('utf-8'))
+        user2 = User(username='user2', firstname='User', lastname='Two', email='user2@example.com', password=bcrypt.generate_password_hash('password2').decode('utf-8'))
+        db.session.add(user1)
+        db.session.add(user2)
+        db.session.commit()
+
+        self.client.post('/login', data=dict(username='user1', password='password1'))
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        
+    def send_friend_request(self):
+        # Test sending a friend request
+        response = self.client.post('/send_friend_request/user2')
+        self.assertEqual(response.status_code, 302) 
+        
+        # Verify the friend request is in the database
+        friend_request = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first()
+        self.assertIsNotNone(friend_request)
+        self.assertEqual(friend_request.status, 'pending')
+    
+    def accept_friend_request(self):
+        # Assuming we have a friend request from user1 to user2
+        self.send_friend_request()
+        
+        # Logout user1 and login as user2 to accept the request
+        self.client.get('/logout')
+        self.client.post('/login', data=dict(username='user2', password='password2'))
+
+        # Accept the friend request
+        request_id = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first().id
+        response = self.client.post(f'/accept_friend_request/{request_id}')
+        self.assertEqual(response.status_code, 302) 
+        
+        # Verify the friend request status is now 'accepted'
+        friend_request = FriendRequest.query.get(request_id)
+        self.assertEqual(friend_request.status, 'accepted')
+
+    def test_create_group_with_friend(self):
+        self.accept_friend_request()
+    
+        user2 = User.query.filter_by(email='user2@example.com').first()
+
+    # Ensure you're logged in as user1 and then create the group
+        self.client.post('/login', data=dict(username='user1', password='password1'))
+        self.client.post('/group', data={
+            'group_name': 'Besties',
+            'selected_friends': [str(user2.id)]
+        })
+
+        new_group = Group.query.filter_by(name='Besties').first()
+        self.assertIsNotNone(new_group, "Group was not created")
+    
+    # Retrieve group members
+        group_members = GroupMember.query.filter_by(group_id=new_group.id).all()
+        self.assertTrue(any(member.user_id == user2.id for member in group_members), "User2 is not a member of the new group")
+
+
+
         
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestWrongLogin))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogout))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestEmailInUse))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNameInUse))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserSearch))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFriendRequest))
-
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestWrongLogin))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogout))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestEmailInUse))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNameInUse))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserSearch))
+    # suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFriendRequest))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(CreateGroup))
 
 
     

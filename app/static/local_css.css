@@ -33,3 +33,28 @@
     /* Add additional styling for the input */
   }
 
+
+.friend-card {
+    display: inline-block; /* Display cards horizontally */
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.friend-card.selected {
+    border-color: blue; /* Highlight selected cards */
+}
+
+
+.group-item {
+  margin: 5px 0;
+  padding: 5px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.highlight {
+  background-color: #f0f0f0; /* Or any color that suits your design */
+  border-color: #007bff; /* Bootstrap primary color for example */
+}
