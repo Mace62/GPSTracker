@@ -1,14 +1,11 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for, send_from_directory, session
-from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm
+from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm, VerifyLoginForm
 from app.models import GPXFile
-from flask import render_template, flash, request, redirect, url_for, send_from_directory
-from app.forms import LoginForm, RegisterForm, UploadForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta
@@ -19,6 +16,7 @@ import folium
 from geopy.distance import geodesic
 import pandas as pd
 import altair as alt
+
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -44,9 +42,31 @@ def load_user(user_id):
 
 
 @app.route('/')
+def landing():
+    return render_template('landing.html')
+
+@app.route('/homepage')
 @login_required
-def index():
+def homepage():
+    username = session.get('username')
+    user = models.User.query.filter_by(username = username).first()
+    user_subscription = models.Subscriptions.query.filter_by(user_id = user.id).first()
+    
+    # Check if the user needs to be locked out because they have unsubscribed
+    if user:
+        if user_subscription and user_subscription.payment_date < datetime.utcnow() and user.has_paid == False:
+            # Delete payment data and logout user
+            # Deleting instead of dereferencing because past subscription data is useless for the admin
+            db.session.delete(user_subscription)
+            db.session.commit()
+            return redirect(url_for("logout"))
+        
+        elif not user_subscription:
+            return redirect(url_for("logout"))
+
+
     subscriptions = models.Subscriptions.query.all()
+    # Loops to refresh the time to pay
     if subscriptions:
         for subscription in subscriptions:
             if subscription.payment_date < datetime.utcnow():
@@ -57,9 +77,7 @@ def index():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
-    if models.Admin.query.filter_by(user_id=current_user.id).first():
-        return redirect(url_for('admin'))
-    return render_template('index.html')
+    return render_template('homepage.html')
 
 
 # Need a page to land on to select what the user wants to pay
@@ -68,10 +86,12 @@ def select_payment():
     form = PaymentForm(request.form)
 
     new_user_data = session.get('new_user')
+    username = session.get('username')
 
-    if not new_user_data:
-        flash("User data not found. Please register first.")
-        return redirect(url_for('register'))
+    if not (new_user_data or username):
+        flash('You must log in to continue')
+        return redirect(url_for('login'))
+    
     if form.validate_on_submit():
         payment_option = request.form.get('payment_option')
         session['payment_option'] = payment_option
@@ -104,6 +124,30 @@ def change_subscription():
 
     return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form)
 
+@app.route('/cancel_subscription', methods=['GET', 'POST'])
+@login_required
+def cancel_subscription():
+    name = session.get('username')
+    form = VerifyLoginForm()
+    user = models.User.query.filter_by(username=name).first()
+
+    if user and user.has_paid == False:
+            flash("You have already cancelled your subscription")
+            return (redirect(url_for("homepage")))
+    
+    if form.validate_on_submit():
+
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            user.has_paid = False
+            db.session.commit()
+
+            flash("Your account will be locked after the subscription has expired")
+            return (redirect(url_for("homepage")))
+        
+        else:
+            return(redirect(url_for("cancel_subscription")))
+
+    return(render_template("cancel_subscription.html", form=form))
 
 @app.route('/new_subscription', methods=['GET', 'POST'])
 @login_required
@@ -129,10 +173,17 @@ def new_subscription():
             cancel_url=url_for('change_subscription', _external=True)
         )
 
-    except Exception as e:
-        return str(e), 403
+        return redirect(checkout_session.url, code=303)
 
-    return redirect(checkout_session.url, code=303)
+    except stripe.error.StripeError as e:
+        # Stripe error handling
+        flash('An error occurred while processing your payment. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    except Exception as e:
+        # Other generic errors
+        flash('An unexpected error occurred. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
 
 
 @app.route('/change_tariff', methods=['GET', 'POST'])
@@ -158,11 +209,12 @@ def change_tariff():
 def payment():
     try:
         new_user_data = session.get('new_user')
+        username = session.get('username')
 
-        if not new_user_data:
-            flash("User data not found. Please register first.")
-            return redirect(url_for('register'))
-
+        if not (new_user_data or username):
+            flash('You must log in to continue')
+            return redirect(url_for('login'))
+        
         # Retrieve form data from session
         payment_option = session.get('payment_option')
         if not payment_option:
@@ -183,35 +235,73 @@ def payment():
             cancel_url=url_for('register', _external=True)
         )
 
-    except Exception as e:
-        return str(e), 403
+        return redirect(checkout_session.url, code=303)
 
-    return redirect(checkout_session.url, code=303)
+    except stripe.error.StripeError as e:
+        # Stripe error handling
+        flash('An error occurred while processing your payment. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    except Exception as e:
+        # Other generic errors
+        flash('An unexpected error occurred. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    
 
 
 @app.route('/login_new_user')
 def login_new_user():
+
+    username = session.get('username')
     new_user_data = session.get('new_user')
-
-    if not new_user_data:
-        flash("User data not found. Please register first.")
-        return redirect(url_for('register'))
-
     payment_option = session.get('payment_option')
 
-    if not payment_option:
+    # Search by database to check if the user already exists
+    existing_user = models.User.query.filter(
+        models.User.username == username
+    ).first()
+
+    # if the user exists and the has paid bool is set to false (user might be retuning to the platform)
+    if existing_user and existing_user.has_paid == False:
+        # Set has_paid to true and save user
+        existing_user.has_paid = True
+        db.session.commit()
+
+        # Set the existing user as the current user
+        user = existing_user
+    
+    # If the user is jumping to this page without registration data
+    elif not new_user_data:
+        flash("User data not found. Please register first.")
+        return redirect(url_for('register'))
+    
+    # If the user is jumping to this page without payment data
+    elif not payment_option:
         flash("Payment option not found. Please select a payment option.")
         return redirect(url_for('select_payment'))
+    
+    # If we are dealing with a new user
+    else:
+        user = models.User(
+            username=new_user_data['username'],
+            password=new_user_data['password'],
+            firstname=new_user_data['firstname'],
+            lastname=new_user_data['lastname'],
+            email=new_user_data['email'],
+            has_paid=True
+        )
 
-    user = models.User(
-        username=new_user_data['username'],
-        password=new_user_data['password'],
-        firstname=new_user_data['firstname'],
-        lastname=new_user_data['lastname'],
-        email=new_user_data['email']
-    )
-    db.session.add(user)
-    db.session.commit()
+        db.session.add(user)
+        db.session.commit()
+
+    # Set session data to check if user has paid
+    session['user_has_paid'] = user.has_paid
+
+    # Seasion data to store username
+    session['username'] = user.username
+
+    # Store subscription data
     if payment_option == "Weekly":
         next_payment = datetime.utcnow() + timedelta(days=7)
     elif payment_option == "Monthly":
@@ -226,9 +316,11 @@ def login_new_user():
     db.session.add(subscription_details)
     db.session.commit()
     login_user(user)
-    flash('You have been registered and logged in successfully. Welcome ' +
-          str(user.username) + '!')
-    return redirect(url_for('index'))
+    if existing_user:
+        flash(f'Welcome back {existing_user.username}. Thank you for resubscribing to our services')
+    else:
+        flash(f'You have been registered and logged in successfully. Welcome {str(user.username)}!')
+    return redirect(url_for('homepage'))
 
 
 @app.route('/logout')
@@ -269,18 +361,6 @@ def register():
                 'email': form.email.data
             }
             return render_template('select_payment.html', form=PaymentForm())
-            hashed_password = bcrypt.generate_password_hash(
-                form.password.data)
-            new_user = models.User(username=form.username.data,
-                                   password=hashed_password,
-                                   firstname=form.first_name.data,
-                                   lastname=form.last_name.data,
-                                   email=form.email.data)
-            db.session.add(new_user)
-            db.session.commit()
-            login_user(new_user)
-            flash("Registered and logged in successfully.")
-            return redirect(url_for('index'))
         except Exception as e:
             flash(f"Error: {e}")
 
@@ -299,16 +379,22 @@ def login():
         db.session.add(admin)
         db.session.commit()
     if form.validate_on_submit():
-        user = models.User.query.filter_by(
-            username=form.username.data).first()
+        user = models.User.query.filter_by(username = form.username.data).first()
+        # users_subscription - models.Subscriptions.query.filter_by
         if user and bcrypt.check_password_hash(user.password, form.password.data):
+            session['username'] = form.username.data
+
             if models.Admin.query.filter_by(user_id=user.id).first():
                 login_user(user)
                 flash('Logged in as admin')
                 return redirect(url_for('admin'))
+            
+            if not models.Subscriptions.query.filter_by(user_id=user.id).first():
+                return redirect(url_for('select_payment'), code=302)
+            
             login_user(user)
             flash('Logged in successfully.')
-            return redirect(url_for('index'))
+            return redirect(url_for('homepage'))
         else:
             flash('Incorrect username or password. Please try again.', 'danger')
 
@@ -320,7 +406,7 @@ def login():
 def admin():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
     return render_template('admin.html')
 
 
@@ -329,7 +415,7 @@ def admin():
 def all_users():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
     # Get all user IDs who are admins
     admin_user_ids = [admin.user_id for admin in models.Admin.query.all()]
 
@@ -348,10 +434,11 @@ def all_users():
 
 
 @app.route('/future_revenue', methods=['GET', 'POST'])
+@login_required
 def future_revenue():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
 
     # Initialize graph data
     graph_data = {
@@ -397,6 +484,7 @@ def future_revenue():
 
 
 @app.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload_file():
     form = UploadForm()
     if request.method == 'POST' and form.validate_on_submit():
