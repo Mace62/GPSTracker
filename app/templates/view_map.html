@@ -12,7 +12,7 @@
     h2 {
         font-family: 'Jura', sans-serif; 
         font-weight: bold; 
-        margin-top: 30px;
+        margin-top: 40px;
         margin-bottom: 20px;
         text-align: center;
     }
@@ -93,6 +93,7 @@
 
     <div id="stats">
         <h2>Track Stats</h2>
+        {% if stats %}
         <table>
             {% for stat_name, stat_value in stats.items() %}
             <tr>
@@ -101,8 +102,13 @@
             </tr>
             {% endfor %}
         </table>
+        {% else %}
+        <div style="border: 2px solid rgb(178, 0, 0); padding: 10px; margin: 5px; text-align: center;background-color: #000000;border-radius: 10px;">
+            <p style="color: red;font-family: Jura;font-size: 32px; font-weight: bolder;">NO STATS AVAILABLE UPLOAD FILE WITH TRACK POINTS TO VIEW STATS</p>
+        </div>
+        {% endif %}
     </div>
-
+    
     <h3>ELEVATION CHARTS</h3>
     <div id="elevation-charts" style="display: flex; flex-direction: column; margin-top: 10px;">
         {% for data in elevation_data %}
@@ -146,6 +152,7 @@
             </div>
         {% endfor %}
     </div>
+
 
     <script>
         document.getElementById('loading').style.display = 'block';

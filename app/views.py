@@ -428,6 +428,7 @@ def upload_file():
         for field, errors in form.errors.items():
             for error in errors:
                 flash(error, 'danger')
+
     return render_template('upload.html', form=form)
 
 
@@ -489,45 +490,44 @@ def generate_map(filename):
     colors = ["blue", "red", "green", "orange", "purple"]
     # create a feature group for tracks
     stats = {}
-    for i, track in enumerate(tracks):
-        fg_tracks = folium.FeatureGroup(name=track.name).add_to(run_map)
-        track_points = models.GPXTrackPoint.query.filter_by(
-            track_id=track.id).all()
+    elevation_data = []
+    if tracks:
+        for i, track in enumerate(tracks):
+            fg_tracks = folium.FeatureGroup(name=track.name).add_to(run_map)
+            track_points = models.GPXTrackPoint.query.filter_by(
+                track_id=track.id).all()
 
-        # create a list of coordinates for the trackpoints
-        track_coords = [[point.latitude, point.longitude]
-                        for point in track_points]
-        # create a polyline with a different color for each track
-        folium.PolyLine(track_coords, color=colors[i % len(colors)],
-                        weight=4.5, opacity=1).add_to(fg_tracks)
-        
-        stats[track.name] = 'STATS'
+            # create a list of coordinates for the trackpoints
+            track_coords = [[point.latitude, point.longitude]
+                            for point in track_points]
+            # create a polyline with a different color for each track
+            folium.PolyLine(track_coords, color=colors[i % len(colors)],
+                            weight=4.5, opacity=1).add_to(fg_tracks)
+            
+            stats[track.name] = 'STATS'
 
-        # Calculate total distance for this track
-        total_distance = total_distance_for_gpx(track_points)
-        stats[f"Total distance  {track.name}"] = "{:.2f} km".format(total_distance)
+            # Calculate total distance for this track
+            total_distance = total_distance_for_gpx(track_points)
+            stats[f"Total distance  {track.name}"] = "{:.2f} km".format(total_distance)
 
-        # Calculate total time for this track
-        total_time = total_time_for_gpx(track_points)
-        stats[f"Total time  {track.name}"] = "{} hrs".format(total_time)
+            # Calculate total time for this track
+            total_time = total_time_for_gpx(track_points)
+            stats[f"Total time  {track.name}"] = "{} hrs".format(total_time)
 
-        # Calculate average speed for this track
-        average_speed = average_speed_for_gpx(track_points)
-        stats[f"Average Speed  {track.name}"] = "{:.2f} km/h".format(average_speed)
+            # Calculate average speed for this track
+            average_speed = average_speed_for_gpx(track_points)
+            stats[f"Average Speed  {track.name}"] = "{:.2f} km/h".format(average_speed)
 
-            # Calculate total elevation gain for this track
-        total_elevation_gain = 0
-        previous_elevation = track_points[0].elevation
-        for point in track_points:
-            if point.elevation > previous_elevation:
-                total_elevation_gain += point.elevation - previous_elevation
-            previous_elevation = point.elevation
-        stats[f"Total elevation gain  {track.name}"] = "{:.2f} ft".format(total_elevation_gain)
+                # Calculate total elevation gain for this track
+            total_elevation_gain = 0
+            previous_elevation = track_points[0].elevation
+            for point in track_points:
+                if point.elevation > previous_elevation:
+                    total_elevation_gain += point.elevation - previous_elevation
+                previous_elevation = point.elevation
+            stats[f"Total elevation gain  {track.name}"] = "{:.2f} ft".format(total_elevation_gain)
 
-        # Calculate elevation data
-        elevation_data = []
-        for track in tracks:
-            track_points = models.GPXTrackPoint.query.filter_by(track_id=track.id).all()
+            # Calculate elevation data
             elevation_data.append({
                 'name': track.name,
                 'elevation': [point.elevation for point in track_points]
@@ -557,6 +557,7 @@ def generate_map(filename):
 
     # Redirect to the route that will serve the map
     return stats, elevation_data
+
 
 
 @app.route('/check_map_status/<filename>')
@@ -655,6 +656,10 @@ def total_distance_for_gpx(gpx_points):
 def total_time_for_gpx(gpx_points):
     start_time = gpx_points[0].time
     end_time = gpx_points[-1].time
+
+    if start_time is None or end_time is None:
+        return timedelta(seconds=0)
+
     total_time = end_time - start_time
     return total_time
 
@@ -663,10 +668,18 @@ def total_time_for_gpx(gpx_points):
 
 def average_speed_for_gpx(gpx_points):
     total_distance = total_distance_for_gpx(gpx_points)
-    total_time_seconds = total_time_for_gpx(gpx_points).total_seconds()
+    total_time = total_time_for_gpx(gpx_points)
+
+    if total_time is None or total_time.total_seconds() == timedelta(seconds=0):
+        return 0
+
+    total_time_seconds = total_time.total_seconds()
+
     # Convert total time to hours
     total_time_hours = total_time_seconds / 3600
+
     # Calculate average speed in km/h
-    average_speed = total_distance / total_time_hours
+    average_speed = total_distance / total_time_hours if total_time_hours != 0 else 0
+
     return average_speed
 

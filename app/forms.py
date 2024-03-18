@@ -43,4 +43,4 @@ class UploadForm(FlaskForm):
         FileRequired(),
         FileAllowed(['gpx'], 'Only GPX files can be uploaded!')
     ])
-    submit = SubmitField('Upload')
+    submit = SubmitField('UPLOAD')

@@ -2,12 +2,45 @@
 
 {% block content %}
 
+<style>
+    .card-title {
+        font-family: 'Jura', sans-serif; 
+        font-weight: bold; 
+        text-align: center;
+        color: #000000;
+    }
+    .card {
+        width: 50%;
+        margin: 0 auto;
+        margin-top: 30px;
+        padding: 20px;
+        border: 1px solid #bdb1a0;
+        border-radius: 10px;
+        background-color: #bdb1a0;
+        font-family: Jura;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+        
+    .submit-button {
+    width: auto;
+    height: auto;
+    font-family: Jura;
+    font-size: 50px; 
+    background-color: green;
+    border-color: #000000;
+    color: white; 
+    }
+</style>
+
 <div class="card">
     <h1 class="card-title text-center">Upload File</h1>
     <div class="card-body">
         <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_file') }}">
             {{ form.hidden_tag() }}
-            <div class="form-group">
+            <div class="form-group text-center ">
                 {{ form.file.label(class="form-control-label") }}
                 {{ form.file(class="form-control") }}
             </div>
