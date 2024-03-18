@@ -14,8 +14,7 @@ from sqlalchemy import not_
 import math
 import folium
 from geopy.distance import geodesic
-import pandas as pd
-import altair as alt
+
 
 
 app.config['SECRET_KEY'] = 'your_secret_key'
