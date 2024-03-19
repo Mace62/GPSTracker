@@ -20,13 +20,50 @@
                     }]
                 },
                 options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: 'black', // Y-axis labels (ticks) color
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)' // Y-axis grid line color
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: 'black', // X-axis labels (ticks) color
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)' // X-axis grid line color
                         }
                     }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'black' // Legend labels color
+                        }
+                    }
+                },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10,
+                        top: 10,
+                        bottom: 10
+                    }
+                },
+                elements: {
+                    line: {
+                        tension: 0 // Disables bezier curves
+                    }
+                },
+                backgroundColor: 'white',
                 }
             });
+
+            ctx.canvas.style.backgroundColor = 'white';
         </script>
     </body>
 {% endblock %}

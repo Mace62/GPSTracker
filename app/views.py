@@ -355,6 +355,10 @@ def register():
             return render_template('select_payment.html', form=PaymentForm())
         except Exception as e:
             flash(f"Error: {e}")
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(error)
 
     return render_template('register.html', form=form)
 
