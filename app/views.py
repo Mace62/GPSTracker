@@ -1,7 +1,7 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for, send_from_directory, session
-from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm, VerifyLoginForm
+from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm, VerifyLoginForm, SearchForm, GroupCreationForm, GroupSelectionForm
 from app.models import GPXFile
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_bcrypt import Bcrypt
@@ -17,7 +17,8 @@ from geopy.distance import geodesic
 
 
 
-app.config['SECRET_KEY'] = 'your_secret_key'
+
+#app.config['SECRET_KEY'] = 'your_secret_key'
 
 # Setting global secret key for Stripe API
 stripe.api_key = "sk_test_51OlhekAu65yEau3hdrHvRwjs8vb8GM2NJnjLuJQYuGHeqgi5nYseoo8D2jIE4qKCvs7EPhzQIOJfQKQUej6SYD0600PGbY7CmA"
@@ -98,14 +99,6 @@ def select_payment():
 
     return render_template("/select_payment.html", form=form)
 
-
-@app.route('/profile', methods=['GET', 'POST'])
-@login_required
-def profile():
-    subscription = models.Subscriptions.query.filter_by(
-        user_id=current_user.id).first()
-    subscription_type = subscription.subscription_type
-    return render_template('profile.html', subscription_type=subscription_type)
 
 
 @app.route('/change_subscription', methods=['GET', 'POST'])
@@ -407,6 +400,268 @@ def login():
 @app.route('/admin')
 @login_required
 def admin():
+    return render_template('admin.html')
+
+
+def get_friends_choices(user_id):
+    sent_friend_requests = db.session.query(models.FriendRequest.receiver_id).filter(
+        models.FriendRequest.sender_id == user_id, models.FriendRequest.status == 'accepted').all()
+    received_friend_requests = db.session.query(models.FriendRequest.sender_id).filter(
+        models.FriendRequest.receiver_id == user_id, models.FriendRequest.status == 'accepted').all()
+
+    friend_ids = [user_id for (
+        user_id,) in sent_friend_requests + received_friend_requests]
+
+    friends = models.User.query.filter(
+        models.User.id.in_(friend_ids)).all() if friend_ids else []
+
+    return [(friend.id, friend.username) for friend in friends]
+
+
+def perform_user_search(query, current_user):
+    results = []
+    follow_status = {}
+    if query:
+        results = models.User.query.filter(
+            models.User.username.ilike(f'%{query}%'),
+            models.User.id != current_user.id
+        ).all()
+
+        for user in results:
+            # Check for requests sent by the current user
+            sent_request = models.FriendRequest.query.filter_by(
+                sender_id=current_user.id, receiver_id=user.id).first()
+            if sent_request:
+                follow_status[user.id] = {
+                    'status': sent_request.status, 'request_id': sent_request.id}
+
+            else:
+                # Check for requests received by the current user
+                received_request = models.FriendRequest.query.filter_by(
+                    sender_id=user.id, receiver_id=current_user.id).first()
+                if received_request:
+                    if(received_request.status == "pending"):
+                        follow_status[user.id] = {
+                            'status': received_request.status + "_received", 'request_id': received_request.id}
+
+                    else:
+                        follow_status[user.id] = {
+                            'status': received_request.status, 'request_id': received_request.id}
+
+        for user in results:
+            if user.id not in follow_status:
+                follow_status[user.id] = {
+                    'status': 'no_action', 'request_id': None}
+    return results, follow_status
+
+
+@app.route('/profile',methods=['GET', 'POST'])
+@login_required
+def profile():
+    subscription = models.Subscriptions.query.filter_by(
+        user_id=current_user.id).first()
+    subscription_type = subscription.subscription_type
+    query = request.args.get('q')
+    form = SearchForm()
+    received_requests = current_user.received_requests.filter_by(
+        status='pending').all()
+    # Fetch received friend requests
+    friend_ids = [friend_id for friend_id,
+                  _ in get_friends_choices(current_user.id)]
+    friends = models.User.query.filter(
+        models.User.id.in_(friend_ids)).all() if friend_ids else []
+    results = []
+    follow_status = {}
+
+    if query:
+        results, follow_status = perform_user_search(query, current_user)
+        # Update follow_status for each user based on friendship
+
+    return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends,subscription_type=subscription_type)
+
+
+@app.route('/send_friend_request/<username>', methods=['POST'])
+@login_required
+def send_friend_request(username):
+    user_to_request = models.User.query.filter_by(
+        username=username).first_or_404()
+
+    # Check if the user is trying to send a friend request to themselves
+    if current_user.id == user_to_request.id:
+        flash("You cannot send a friend request to yourself.", "danger")
+        return redirect(url_for('profile', username=username))
+
+    # Check if there is already a friend request sent or if they are already friends
+    existing_request = models.FriendRequest.query.filter(
+        ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == user_to_request.id)) |
+        ((models.FriendRequest.receiver_id == current_user.id) &
+         (models.FriendRequest.sender_id == user_to_request.id))
+    ).first()
+
+    if existing_request:
+        if existing_request.status == 'pending':
+            flash("Friend request already sent.", "info")
+        elif existing_request.status == 'accepted':
+            flash("You are already friends.", "info")
+        # Optionally handle 'declined' and 'removed' statuses here
+    else:
+        # If no existing request, create a new friend request
+        new_request = models.FriendRequest(
+            sender_id=current_user.id, receiver_id=user_to_request.id, status='pending')
+        db.session.add(new_request)
+        db.session.commit()
+        flash(f"Friend request sent to {username}.", "success")
+
+    return redirect(url_for('profile', username=username))
+
+
+@app.route('/deny_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def deny_friend_request(request_id):
+    request = models.FriendRequest.query.get_or_404(request_id)
+    if request.receiver_id == current_user.id:
+        # Delete the friend request instead of changing its status
+        db.session.delete(request)
+        db.session.commit()
+        flash('Friend request denied.', 'success')
+    else:
+        flash('Unauthorized action.', 'danger')
+    return redirect(url_for('profile'))
+
+
+@app.route('/accept_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def accept_friend_request(request_id):
+
+    request = models.FriendRequest.query.get_or_404(request_id)
+
+    # Now, using the friend request, fetch the sender and receiver
+    sender = models.User.query.get(request.sender_id)
+    receiver = models.User.query.get(request.receiver_id)
+
+    if request.receiver_id == current_user.id:
+        request.status = 'accepted'
+        db.session.commit()
+        flash('Friend request accepted.', 'success')
+    else:
+        flash('Unauthorized action.', 'danger')
+
+    return redirect(url_for('profile'))
+
+
+@app.route('/remove_friend/<int:friend_id>', methods=['POST'])
+@login_required
+def remove_friend(friend_id):
+    # Assuming 'friend_id' is the user ID of the friend to be removed
+
+    # Check if the current user has a friend request with the given friend_id that's accepted
+    friend_request = models.FriendRequest.query.filter(
+        models.FriendRequest.status == 'accepted',
+        ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == friend_id)) |
+        ((models.FriendRequest.sender_id == friend_id) &
+         (models.FriendRequest.receiver_id == current_user.id))
+    ).first()
+
+    if not friend_request:
+        flash("No friend connection found.", "danger")
+        return redirect(url_for('profile'))
+
+    db.session.delete(friend_request)
+
+    db.session.commit()
+    flash('Friend removed successfully.', 'success')
+    return redirect(url_for('profile'))
+
+
+@app.route('/cancel_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def cancel_friend_request(request_id):
+    friend_request = models.FriendRequest.query.get_or_404(request_id)
+    if friend_request.sender_id == current_user.id and friend_request.status == 'pending':
+        db.session.delete(friend_request)
+        db.session.commit()
+        flash('Friend request canceled.', 'success')
+    else:
+        flash('Unauthorized action or request not found.', 'danger')
+    return redirect(url_for('profile'))
+
+
+def create_group(user_ids, group_name):
+    # Create a new group instance
+    new_group = models.Group(name=group_name)
+    db.session.add(new_group)
+    db.session.flush()
+
+    # Add the current user and selected friends to the group
+    for user_id in user_ids:
+        # Ensure no attempt to add non-existent users
+        if models.User.query.get(user_id):
+            new_group_member = models.GroupMember(
+                group_id=new_group.id, user_id=user_id)
+            db.session.add(new_group_member)
+
+    db.session.commit()
+    return new_group
+
+
+@app.route('/group', defaults={'group_id': None}, methods=['GET', 'POST'])
+@app.route('/group/<group_id>', methods=['GET', 'POST'])
+@login_required
+def group(group_id):
+    creation_form = GroupCreationForm()
+    selection_form = GroupSelectionForm()
+    user_groups = models.GroupMember.query.filter_by(
+        user_id=current_user.id).all()
+    # Extract group IDs for querying Group details
+    group_ids = [membership.group_id for membership in user_groups]
+    groups = models.Group.query.filter(
+        models.Group.id.in_(group_ids)).all() if group_ids else []
+    selection_form.group.choices = [
+        ('', '--- Select a Group ---')] + [(g.id, g.name) for g in groups]
+
+    if creation_form.validate_on_submit():
+        # Parse the form data to get selected friend IDs and include the current user's ID
+        group_user_ids = request.form.get('selected_friends').split(',')
+        group_user_ids.append(str(current_user.id))
+        # Extracted name of the group from the form
+        group_name = creation_form.group_name.data
+
+        # Prepare a list of all user IDs (the current user and selected friends)
+        user_ids = [current_user.id] + \
+            [int(uid) for uid in group_user_ids if uid.isdigit()]
+
+        # Query to check if any user in the user_ids list already has a group with the given name
+        existing_group = models.Group.query.join(models.GroupMember).filter(
+            models.Group.name == group_name, models.GroupMember.user_id.in_(user_ids)).first()
+
+        if existing_group:
+            # If such a group exists, inform the user and do not proceed with creating the new group
+            flash(
+                'A group with this name already exists within your selected group of friends.', 'error')
+        else:
+            # If the name is unique, proceed with group creation
+            new_group = create_group(group_user_ids, group_name)
+            flash('Group created successfully.', 'success')
+            return redirect(url_for('group'))  # Redirect as appropriate
+
+    friends_choices = get_friends_choices(current_user.id)
+
+    if group_id is not None and group_id != '':
+        selection_form.group.data = group_id
+    else:
+        # Logic for rendering the default /group page...
+        selection_form.group.data = ''
+
+    if group_id:
+        selected_group = models.Group.query.get(group_id)
+        if selected_group:
+            display_group_name = selected_group.name
+        else:
+            display_group_name = '-- Select a Group --'
+    else:
+        display_group_name = '-- Select a Group --'
+
+    return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name)
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
         return redirect(url_for('homepage'))
