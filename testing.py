@@ -701,7 +701,7 @@ class TestUserHasNotLoggedIn(TestCase):
 
         # This is a blacklist for URL's to not test when looking at login redirects
         # Add stuff here if you think the URL does not need the @login_required decorator
-        login_redirects_not_to_test = ["/login_new_user", "/register", "/login", "/static/bootstrap/<path:filename>", "/static/<path:filename>", "/"]
+        login_redirects_not_to_test = ["/login_new_user", "/register", "/login", "/static/bootstrap/<path:filename>", "/static/<path:filename>", "/", "/accept_friend_request/<int:request_id>","/cancel_friend_request/<int:request_id>","/deny_friend_request/<int:request_id>","/send_friend_request/<username>","/remove_friend/<int:friend_id>"]
         login_redirects_not_to_test_because_its_under_construction = ["/check_map_status/<filename>"]
 
         with self.client as c:
