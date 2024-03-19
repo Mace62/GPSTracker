@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ filename }}</h1>
+<h2>Waypoints</h2>
+<ul>
+    {% for waypoint in waypoints %}
+    <li>{{ waypoint.name }}: {{ waypoint.latitude }}, {{ waypoint.longitude }}</li>
+    {% endfor %}
+</ul>
+<h2>Tracks</h2>
+<ul>
+    {% for track in tracks %}
+    <li>{{ track.name }}</li>
+    <ul>
+        {% for point in track_points %}
+        <li>{{ point.latitude }}, {{ point.longitude }}</li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -1,8 +1,11 @@
 flask
-__pycache__/
-app/__pycache__/
+__pycache__
+**/__pycache__
+app/__pycache__
 *.pyc
 migrations
 *.db
 *.log
-```
+/static/uploads/**
+/static/uploads/
+**/uploads

@@ -1,6 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField,SelectField,HiddenField
+from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField, HiddenField,SelectField
+from flask_wtf.file import FileField, FileRequired
+from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField
 from wtforms.validators import DataRequired, ValidationError, Email
+from flask_wtf.file import FileAllowed
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -15,7 +18,7 @@ class RegisterForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name', validators=[DataRequired()])
     email = EmailField('Email', validators=[DataRequired(), Email()])
-    submit = SubmitField('Register')
+    submit = SubmitField('Next')
 
     def validate_password(form, field):
         password = field.data
@@ -44,3 +47,22 @@ class GroupCreationForm(FlaskForm):
 
 class GroupSelectionForm(FlaskForm):
     group = SelectField('Select a Group', choices=[('', '--- Select a Group ---')], validate_choice=False)
+
+# Payment form to get preferred payment option
+class PaymentForm(FlaskForm):
+    payment_option = HiddenField('selected_option')
+    submit = SubmitField('Submit')
+        
+class UploadForm(FlaskForm):
+    file = FileField('GPX File', validators=[
+        FileRequired(),
+        FileAllowed(['gpx'], 'Only GPX files can be uploaded!')
+    ])
+
+
+    submit = SubmitField('Upload')
+
+class VerifyLoginForm(FlaskForm):
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Disable Account')
+

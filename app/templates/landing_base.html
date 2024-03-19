@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">    
+    <link rel="stylesheet" href="{{ url_for('static', filename='local_css.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Jura" />
+    <style>
+                /* Custom styles here */
+                .card {
+            max-width: 25rem;
+            margin: auto;
+            margin-top: 50px;
+            background-color: #bdb1a0;
+            border: none;
+        }
+        body {
+            background-color: #bdb1a0;
+        }
+        h1 {
+            font-family: Jura; font-size: 40px; font-style: normal; font-variant: normal; font-weight: 700; line-height: 26.4px;
+        } 
+        h3 { 
+            font-family: Jura; font-size: 14px; font-style: normal; font-variant: normal; font-weight: 700; line-height: 15.4px; 
+        } 
+        p { font-family: Jura; font-size: 14px; font-style: normal; font-variant: normal; font-weight: 400; line-height: 20px; 
+        } 
+        a {
+            color: rgb(0, 0, 189);
+        }
+        /* body {
+            background-color: #f8f9fa;
+        } */
+        .navbar {
+            background-color: #343a40;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        .navbar-brand img {
+            height: 40px;
+            width: auto;
+        }
+        .navbar-brand:hover {
+            opacity: 0.8;
+        }
+        .header {
+            padding-top: 50px;
+            padding-bottom: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #343a40;
+        }
+        .content-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .alert {
+            border-radius: 8px;
+        }
+        .footer {
+            background-color: #343a40;
+            color: #ffffff;
+            padding: 30px 0;
+            text-align: center;
+        }
+        .footer a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .social-icons a {
+            color: #ffffff;
+            font-size: 1.5rem;
+            margin: 0 10px;
+            transition: opacity 0.3s;
+        }
+        .social-icons a:hover {
+            opacity: 0.8;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% if title %}
+        <title>{{ title }}</title>
+    {% else %}
+        <title>GPS Tracker</title>
+    {% endif %}
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/register">Register</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container header">
+        <h1>TerraTracker</h1>
+    </div>
+
+    <div class="container content-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert {% if category == 'danger' %}alert-danger{% else %}alert-success{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="social-icons mb-3">
+                <a href="#" class="fab fa-facebook"></a>
+                <a href="#" class="fab fa-twitter"></a>
+                <a href="#" class="fab fa-instagram"></a>
+            </div>
+            <p>&copy; 2024 TerraTracker. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
