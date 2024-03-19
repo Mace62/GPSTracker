@@ -1,14 +1,11 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for, send_from_directory, session
-from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm
+from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm, VerifyLoginForm
 from app.models import GPXFile
-from flask import render_template, flash, request, redirect, url_for, send_from_directory
-from app.forms import LoginForm, RegisterForm, UploadForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta
@@ -17,7 +14,8 @@ from sqlalchemy import not_
 import math
 import folium
 from geopy.distance import geodesic
-from datetime import datetime
+
+
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 
@@ -34,7 +32,7 @@ SUBSCRIPTION_PRODUCTS_ID = {
 bcrypt = Bcrypt(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'landing'
+login_manager.login_view = 'login'
 
 
 @login_manager.user_loader
@@ -42,9 +40,32 @@ def load_user(user_id):
     return models.User.query.get(int(user_id))
 
 
-@app.route('/landing')
+@app.route('/')
 def landing():
+    return render_template('landing.html')
+
+@app.route('/homepage')
+@login_required
+def homepage():
+    username = session.get('username')
+    user = models.User.query.filter_by(username = username).first()
+    user_subscription = models.Subscriptions.query.filter_by(user_id = user.id).first()
+    
+    # Check if the user needs to be locked out because they have unsubscribed
+    if user:
+        if user_subscription and user_subscription.payment_date < datetime.utcnow() and user.has_paid == False:
+            # Delete payment data and logout user
+            # Deleting instead of dereferencing because past subscription data is useless for the admin
+            db.session.delete(user_subscription)
+            db.session.commit()
+            return redirect(url_for("logout"))
+        
+        elif not user_subscription:
+            return redirect(url_for("logout"))
+
+
     subscriptions = models.Subscriptions.query.all()
+    # Loops to refresh the time to pay
     if subscriptions:
         for subscription in subscriptions:
             if subscription.payment_date < datetime.utcnow():
@@ -55,12 +76,7 @@ def landing():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
-    return render_template('landing.html')
-
-@app.route('/')
-@login_required
-def index():
-    return render_template('index.html')
+    return render_template('homepage.html')
 
 
 # Need a page to land on to select what the user wants to pay
@@ -69,10 +85,12 @@ def select_payment():
     form = PaymentForm(request.form)
 
     new_user_data = session.get('new_user')
+    username = session.get('username')
 
-    if not new_user_data:
-        flash("User data not found. Please register first.")
-        return redirect(url_for('register'))
+    if not (new_user_data or username):
+        flash('You must log in to continue')
+        return redirect(url_for('login'))
+    
     if form.validate_on_submit():
         payment_option = request.form.get('payment_option')
         session['payment_option'] = payment_option
@@ -105,6 +123,30 @@ def change_subscription():
 
     return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form)
 
+@app.route('/cancel_subscription', methods=['GET', 'POST'])
+@login_required
+def cancel_subscription():
+    name = session.get('username')
+    form = VerifyLoginForm()
+    user = models.User.query.filter_by(username=name).first()
+
+    if user and user.has_paid == False:
+            flash("You have already cancelled your subscription")
+            return (redirect(url_for("homepage")))
+    
+    if form.validate_on_submit():
+
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            user.has_paid = False
+            db.session.commit()
+
+            flash("Your account will be locked after the subscription has expired")
+            return (redirect(url_for("homepage")))
+        
+        else:
+            return(redirect(url_for("cancel_subscription")))
+
+    return(render_template("cancel_subscription.html", form=form))
 
 @app.route('/new_subscription', methods=['GET', 'POST'])
 @login_required
@@ -130,10 +172,17 @@ def new_subscription():
             cancel_url=url_for('change_subscription', _external=True)
         )
 
-    except Exception as e:
-        return str(e), 403
+        return redirect(checkout_session.url, code=303)
 
-    return redirect(checkout_session.url, code=303)
+    except stripe.error.StripeError as e:
+        # Stripe error handling
+        flash('An error occurred while processing your payment. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    except Exception as e:
+        # Other generic errors
+        flash('An unexpected error occurred. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
 
 
 @app.route('/change_tariff', methods=['GET', 'POST'])
@@ -159,11 +208,12 @@ def change_tariff():
 def payment():
     try:
         new_user_data = session.get('new_user')
+        username = session.get('username')
 
-        if not new_user_data:
-            flash("User data not found. Please register first.")
-            return redirect(url_for('register'))
-
+        if not (new_user_data or username):
+            flash('You must log in to continue')
+            return redirect(url_for('login'))
+        
         # Retrieve form data from session
         payment_option = session.get('payment_option')
         if not payment_option:
@@ -184,35 +234,73 @@ def payment():
             cancel_url=url_for('register', _external=True)
         )
 
-    except Exception as e:
-        return str(e), 403
+        return redirect(checkout_session.url, code=303)
 
-    return redirect(checkout_session.url, code=303)
+    except stripe.error.StripeError as e:
+        # Stripe error handling
+        flash('An error occurred while processing your payment. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    except Exception as e:
+        # Other generic errors
+        flash('An unexpected error occurred. Please try again later.')
+        return redirect(url_for('select_payment'), code=400)
+
+    
 
 
 @app.route('/login_new_user')
 def login_new_user():
+
+    username = session.get('username')
     new_user_data = session.get('new_user')
-
-    if not new_user_data:
-        flash("User data not found. Please register first.")
-        return redirect(url_for('register'))
-
     payment_option = session.get('payment_option')
 
-    if not payment_option:
+    # Search by database to check if the user already exists
+    existing_user = models.User.query.filter(
+        models.User.username == username
+    ).first()
+
+    # if the user exists and the has paid bool is set to false (user might be retuning to the platform)
+    if existing_user and existing_user.has_paid == False:
+        # Set has_paid to true and save user
+        existing_user.has_paid = True
+        db.session.commit()
+
+        # Set the existing user as the current user
+        user = existing_user
+    
+    # If the user is jumping to this page without registration data
+    elif not new_user_data:
+        flash("User data not found. Please register first.")
+        return redirect(url_for('register'))
+    
+    # If the user is jumping to this page without payment data
+    elif not payment_option:
         flash("Payment option not found. Please select a payment option.")
         return redirect(url_for('select_payment'))
+    
+    # If we are dealing with a new user
+    else:
+        user = models.User(
+            username=new_user_data['username'],
+            password=new_user_data['password'],
+            firstname=new_user_data['firstname'],
+            lastname=new_user_data['lastname'],
+            email=new_user_data['email'],
+            has_paid=True
+        )
 
-    user = models.User(
-        username=new_user_data['username'],
-        password=new_user_data['password'],
-        firstname=new_user_data['firstname'],
-        lastname=new_user_data['lastname'],
-        email=new_user_data['email']
-    )
-    db.session.add(user)
-    db.session.commit()
+        db.session.add(user)
+        db.session.commit()
+
+    # Set session data to check if user has paid
+    session['user_has_paid'] = user.has_paid
+
+    # Seasion data to store username
+    session['username'] = user.username
+
+    # Store subscription data
     if payment_option == "Weekly":
         next_payment = datetime.utcnow() + timedelta(days=7)
     elif payment_option == "Monthly":
@@ -227,9 +315,11 @@ def login_new_user():
     db.session.add(subscription_details)
     db.session.commit()
     login_user(user)
-    flash('You have been registered and logged in successfully. Welcome ' +
-          str(user.username) + '!')
-    return redirect(url_for('index'))
+    if existing_user:
+        flash(f'Welcome back {existing_user.username}. Thank you for resubscribing to our services')
+    else:
+        flash(f'You have been registered and logged in successfully. Welcome {str(user.username)}!')
+    return redirect(url_for('homepage'))
 
 
 @app.route('/logout')
@@ -270,18 +360,6 @@ def register():
                 'email': form.email.data
             }
             return render_template('select_payment.html', form=PaymentForm())
-            hashed_password = bcrypt.generate_password_hash(
-                form.password.data)
-            new_user = models.User(username=form.username.data,
-                                   password=hashed_password,
-                                   firstname=form.first_name.data,
-                                   lastname=form.last_name.data,
-                                   email=form.email.data)
-            db.session.add(new_user)
-            db.session.commit()
-            login_user(new_user)
-            flash("Registered and logged in successfully.")
-            return redirect(url_for('index'))
         except Exception as e:
             flash(f"Error: {e}")
     else:
@@ -304,16 +382,22 @@ def login():
         db.session.add(admin)
         db.session.commit()
     if form.validate_on_submit():
-        user = models.User.query.filter_by(
-            username=form.username.data).first()
+        user = models.User.query.filter_by(username = form.username.data).first()
+        # users_subscription - models.Subscriptions.query.filter_by
         if user and bcrypt.check_password_hash(user.password, form.password.data):
+            session['username'] = form.username.data
+
             if models.Admin.query.filter_by(user_id=user.id).first():
                 login_user(user)
                 flash('Logged in as admin')
                 return redirect(url_for('admin'))
+            
+            if not models.Subscriptions.query.filter_by(user_id=user.id).first():
+                return redirect(url_for('select_payment'), code=302)
+            
             login_user(user)
             flash('Logged in successfully.')
-            return redirect(url_for('index'))
+            return redirect(url_for('homepage'))
         else:
             flash('Incorrect username or password. Please try again.', 'danger')
 
@@ -325,7 +409,7 @@ def login():
 def admin():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
     return render_template('admin.html')
 
 
@@ -334,7 +418,7 @@ def admin():
 def all_users():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
     # Get all user IDs who are admins
     admin_user_ids = [admin.user_id for admin in models.Admin.query.all()]
 
@@ -353,10 +437,11 @@ def all_users():
 
 
 @app.route('/future_revenue', methods=['GET', 'POST'])
+@login_required
 def future_revenue():
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
 
     # Initialize graph data
     graph_data = {
@@ -402,6 +487,7 @@ def future_revenue():
 
 
 @app.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload_file():
     form = UploadForm()
     if request.method == 'POST' and form.validate_on_submit():
@@ -433,6 +519,7 @@ def upload_file():
         for field, errors in form.errors.items():
             for error in errors:
                 flash(error, 'danger')
+
     return render_template('upload.html', form=form)
 
 
@@ -493,17 +580,49 @@ def generate_map(filename):
 
     colors = ["blue", "red", "green", "orange", "purple"]
     # create a feature group for tracks
-    for i, track in enumerate(tracks):
-        fg_tracks = folium.FeatureGroup(name=track.name).add_to(run_map)
-        track_points = models.GPXTrackPoint.query.filter_by(
-            track_id=track.id).all()
+    stats = {}
+    elevation_data = []
+    if tracks:
+        for i, track in enumerate(tracks):
+            fg_tracks = folium.FeatureGroup(name=track.name).add_to(run_map)
+            track_points = models.GPXTrackPoint.query.filter_by(
+                track_id=track.id).all()
 
-        # create a list of coordinates for the trackpoints
-        track_coords = [[point.latitude, point.longitude]
-                        for point in track_points]
-        # create a polyline with a different color for each track
-        folium.PolyLine(track_coords, color=colors[i % len(colors)],
-                        weight=4.5, opacity=1).add_to(fg_tracks)
+            # create a list of coordinates for the trackpoints
+            track_coords = [[point.latitude, point.longitude]
+                            for point in track_points]
+            # create a polyline with a different color for each track
+            folium.PolyLine(track_coords, color=colors[i % len(colors)],
+                            weight=4.5, opacity=1).add_to(fg_tracks)
+            
+            stats[track.name] = 'STATS'
+
+            # Calculate total distance for this track
+            total_distance = total_distance_for_gpx(track_points)
+            stats[f"Total distance  {track.name}"] = "{:.2f} km".format(total_distance)
+
+            # Calculate total time for this track
+            total_time = total_time_for_gpx(track_points)
+            stats[f"Total time  {track.name}"] = "{} hrs".format(total_time)
+
+            # Calculate average speed for this track
+            average_speed = average_speed_for_gpx(track_points)
+            stats[f"Average Speed  {track.name}"] = "{:.2f} km/h".format(average_speed)
+
+                # Calculate total elevation gain for this track
+            total_elevation_gain = 0
+            previous_elevation = track_points[0].elevation
+            for point in track_points:
+                if point.elevation > previous_elevation:
+                    total_elevation_gain += point.elevation - previous_elevation
+                previous_elevation = point.elevation
+            stats[f"Total elevation gain  {track.name}"] = "{:.2f} ft".format(total_elevation_gain)
+
+            # Calculate elevation data
+            elevation_data.append({
+                'name': track.name,
+                'elevation': [point.elevation for point in track_points]
+            })
 
     # add legend in top right corner
     run_map.add_child(folium.LayerControl(
@@ -524,19 +643,12 @@ def generate_map(filename):
     with open(os.path.join(user_folder, map_file), 'w') as f:
         f.write(modified_html_content)
 
-    # if track_points:
-    #     total_distance = total_distance_for_gpx(track_points)
-    #     print(total_distance)
-    #     total_time = total_time_for_gpx(track_points)
-    #     print(total_time)
-    #     average_speed = average_speed_for_gpx(track_points)
-    #     print("Average Speed:", average_speed, "km/h")
-
     map_file = f'{filename}_map.html'
     run_map.save(os.path.join(user_folder, map_file))
 
     # Redirect to the route that will serve the map
-    return redirect(url_for('serve_map', filename=map_file))
+    return stats, elevation_data
+
 
 
 @app.route('/check_map_status/<filename>')
@@ -567,12 +679,13 @@ def serve_map(filename):
 @app.route('/view/<filename>')
 @login_required
 def view(filename):
-    generate_map(filename)
+    stats, elevation_data = generate_map(filename)
+    # generate_map(filename)
     user_folder = os.path.join(
         app.root_path, 'static', 'uploads', str(current_user.id))
     map_file = f'{filename}_map.html'
     map_url = url_for('serve_map', filename=map_file)
-    return render_template('view_map.html', map_url=map_url, filename=filename)
+    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats, elevation_data=elevation_data)
 
 
 @app.route('/download/<filename>')
@@ -634,6 +747,10 @@ def total_distance_for_gpx(gpx_points):
 def total_time_for_gpx(gpx_points):
     start_time = gpx_points[0].time
     end_time = gpx_points[-1].time
+
+    if start_time is None or end_time is None:
+        return timedelta(seconds=0)
+
     total_time = end_time - start_time
     return total_time
 
@@ -642,10 +759,18 @@ def total_time_for_gpx(gpx_points):
 
 def average_speed_for_gpx(gpx_points):
     total_distance = total_distance_for_gpx(gpx_points)
-    total_time_seconds = total_time_for_gpx(gpx_points).total_seconds()
+    total_time = total_time_for_gpx(gpx_points)
+
+    if total_time is None or total_time.total_seconds() == timedelta(seconds=0):
+        return 0
+
+    total_time_seconds = total_time.total_seconds()
+
     # Convert total time to hours
     total_time_hours = total_time_seconds / 3600
+
     # Calculate average speed in km/h
-    average_speed = total_distance / total_time_hours
+    average_speed = total_distance / total_time_hours if total_time_hours != 0 else 0
+
     return average_speed
 
