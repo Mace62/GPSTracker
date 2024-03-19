@@ -41,5 +41,6 @@ class GroupCreationForm(FlaskForm):
     selected_friends = HiddenField()  # Stores IDs of selected friends
     submit = SubmitField('Create Group')
     
+
 class GroupSelectionForm(FlaskForm):
     group = SelectField('Select a Group', choices=[('', '--- Select a Group ---')], validate_choice=False)

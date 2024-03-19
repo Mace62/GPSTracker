@@ -33,7 +33,6 @@ def show():
 @app.route('/homepage')
 @login_required
 def homepage():
-    print(get_friends_choices(current_user.id))
     return render_template('homepage.html')
 
 
@@ -241,7 +240,6 @@ def accept_friend_request(request_id):
     sender = models.User.query.get(request.sender_id)
     receiver = models.User.query.get(request.receiver_id)
 
-    # Now you can print the usernames of the sender and receiver
     if request.receiver_id == current_user.id:
         request.status = 'accepted'
         db.session.commit()
@@ -307,38 +305,45 @@ def create_group(user_ids, group_name):
     return new_group
 
 
-# @app.route('/group', methods=['GET', 'POST'])
-# @login_required
-# def group():
 @app.route('/group', defaults={'group_id': None}, methods=['GET', 'POST'])
 @app.route('/group/<group_id>', methods=['GET', 'POST'])
 @login_required
 def group(group_id):
     creation_form = GroupCreationForm()
     selection_form = GroupSelectionForm()
-
     user_groups = models.GroupMember.query.filter_by(
         user_id=current_user.id).all()
     # Extract group IDs for querying Group details
     group_ids = [membership.group_id for membership in user_groups]
     groups = models.Group.query.filter(
         models.Group.id.in_(group_ids)).all() if group_ids else []
-    selection_form.group.choices = [('', '--- Select a Group ---')] + [(g.id, g.name) for g in groups]
-
+    selection_form.group.choices = [
+        ('', '--- Select a Group ---')] + [(g.id, g.name) for g in groups]
 
     if creation_form.validate_on_submit():
+        # Parse the form data to get selected friend IDs and include the current user's ID
         group_user_ids = request.form.get('selected_friends').split(',')
         group_user_ids.append(str(current_user.id))
-        group_name = creation_form.group_name.data  # Name of the group
+        # Extracted name of the group from the form
+        group_name = creation_form.group_name.data
 
-        create_group(group_user_ids, group_name)
+        # Prepare a list of all user IDs (the current user and selected friends)
+        user_ids = [current_user.id] + \
+            [int(uid) for uid in group_user_ids if uid.isdigit()]
 
-        return redirect(url_for('group'))  # Redirect as appropriate
-    
-    if selection_form.validate_on_submit():
-        selected_group_id = selection_form.group.data
-        # Redirect to a view that handles the selected group, for example:
-        return redirect(url_for('group', group_id=selected_group_id))
+        # Query to check if any user in the user_ids list already has a group with the given name
+        existing_group = models.Group.query.join(models.GroupMember).filter(
+            models.Group.name == group_name, models.GroupMember.user_id.in_(user_ids)).first()
+
+        if existing_group:
+            # If such a group exists, inform the user and do not proceed with creating the new group
+            flash(
+                'A group with this name already exists within your selected group of friends.', 'error')
+        else:
+            # If the name is unique, proceed with group creation
+            new_group = create_group(group_user_ids, group_name)
+            flash('Group created successfully.', 'success')
+            return redirect(url_for('group'))  # Redirect as appropriate
 
     friends_choices = get_friends_choices(current_user.id)
 
@@ -347,7 +352,7 @@ def group(group_id):
     else:
         # Logic for rendering the default /group page...
         selection_form.group.data = ''
-        
+
     if group_id:
         selected_group = models.Group.query.get(group_id)
         if selected_group:
@@ -356,7 +361,5 @@ def group(group_id):
             display_group_name = '-- Select a Group --'
     else:
         display_group_name = '-- Select a Group --'
-    print(group_id)
-    
 
     return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name)

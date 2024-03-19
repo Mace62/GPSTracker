@@ -573,7 +573,73 @@ class CreateGroup(unittest.TestCase):
         group_members = GroupMember.query.filter_by(group_id=new_group.id).all()
         self.assertTrue(any(member.user_id == user2.id for member in group_members), "User2 is not a member of the new group")
 
+class GroupTestCase(unittest.TestCase):
+    def create_app(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        return app
 
+    def setUp(self):
+        self.app = self.create_app()
+        self.client = self.app.test_client()
+        db.create_all()
+
+        # Create test users
+        for i in range(1, 5):
+            user = User(username=f'user{i}', firstname ='test', lastname ='user', email=f'user{i}@example.com', password=bcrypt.generate_password_hash(f'password{i}'))
+            db.session.add(user)
+        db.session.commit()
+
+        # Establish friendships
+        self.establish_friendships()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        
+
+    def login(self, username, password):
+        return self.client.post('/login', data={'username': username, 'password': password}, follow_redirects=True)
+
+    def logout(self):
+        return self.client.get('/logout', follow_redirects=True)
+
+    def establish_friendships(self):
+        users = User.query.all()
+        for user in users:
+            for friend in users:
+                if user.id != friend.id:
+                # Check if the friendship (accepted request) already exists to avoid duplicates
+                    existing_request = FriendRequest.query.filter(
+                        ((FriendRequest.sender_id == user.id) & (FriendRequest.receiver_id == friend.id)) |
+                        ((FriendRequest.receiver_id == user.id) & (FriendRequest.sender_id == friend.id))
+                    ).first()
+                
+                    if not existing_request:
+                        # Directly create an accepted friend request between the users
+                        new_request = FriendRequest(sender_id=user.id, receiver_id=friend.id, status='accepted')
+                        db.session.add(new_request)
+        db.session.commit()
+
+
+    def test_group_creation(self):
+        # Login as user1
+        self.login('user1', 'password1')
+
+        # Users 1 and 2 create a group named "group1"
+        response = self.client.post('/group', data={'group_name': 'group1', 'selected_friends': '2'}, follow_redirects=True)
+        self.assertIn(b'Group created successfully.', response.data)
+
+        # Attempt by user3 to create a group named "group1" with user2 should fail
+        self.logout()
+        self.login('user3', 'password3')
+        response = self.client.post('/group', data={'group_name': 'group1', 'selected_friends': '2'}, follow_redirects=True)
+        self.assertIn(b'A group with this name already exists', response.data)
+
+        # User3 creates a group named "group1" with user4, which should succeed
+        response = self.client.post('/group', data={'group_name': 'group1', 'selected_friends': '4'}, follow_redirects=True)
+        self.assertIn(b'Group created successfully.', response.data)
 
         
 if __name__ == '__main__':
@@ -590,6 +656,7 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserSearch))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFriendRequest))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(CreateGroup))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(GroupTestCase))
 
 
     
