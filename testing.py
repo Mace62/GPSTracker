@@ -67,6 +67,7 @@ class TestRegistration(TestCase):
         self.assertIsNotNone(user)
         self.assertEqual(user.username, 'testuser')
 
+
 class TestLogin(TestCase):
 
     def create_app(self):
@@ -80,7 +81,8 @@ class TestLogin(TestCase):
         self.client = app.test_client()
         # Create a test user for login
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
+        test_user = User(username='testuser', firstname='t',
+                         lastname='t', email='t@t.com', password=hashed_password)
         db.session.add(test_user)
         db.session.commit()
 
@@ -94,11 +96,12 @@ class TestLogin(TestCase):
         response = self.client.post('/login', data=dict(
             username='testuser',
             password='Testpassword!'), follow_redirects=True)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Logged in successfully.', response.data)
-        
+
+
 class TestWrongLogin(TestCase):
 
     def create_app(self):
@@ -113,7 +116,8 @@ class TestWrongLogin(TestCase):
 
         # Create a test user for login
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
+        test_user = User(username='testuser', firstname='t',
+                         lastname='t', email='t@t.com', password=hashed_password)
         db.session.add(test_user)
         db.session.commit()
 
@@ -127,7 +131,7 @@ class TestWrongLogin(TestCase):
         response = self.client.post('/login', data=dict(
             username='testuser',
             password='Wrongpassword!'), follow_redirects=True)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Incorrect username or password. Please try again.', response.data)
@@ -146,7 +150,8 @@ class TestLogout(TestCase):
         self.client = app.test_client()
         # Create a test user for login
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com',password=hashed_password)
+        test_user = User(username='testuser', firstname='t',
+                         lastname='t', email='t@t.com', password=hashed_password)
         db.session.add(test_user)
         db.session.commit()
 
@@ -163,11 +168,12 @@ class TestLogout(TestCase):
     def test_logout(self):
         """Test user logout."""
         response = self.client.get('/logout', follow_redirects=True)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'You have been logged out.', response.data)
-        
+
+
 class TestEmailInUse(TestCase):
 
     def create_app(self):
@@ -182,7 +188,8 @@ class TestEmailInUse(TestCase):
 
         # create a user
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='example@example.com',password=hashed_password)
+        test_user = User(username='testuser', firstname='t', lastname='t',
+                         email='example@example.com', password=hashed_password)
         db.session.add(test_user)
         db.session.commit()
 
@@ -206,7 +213,8 @@ class TestEmailInUse(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Email exists, try a different email.', response.data)
-        
+
+
 class TestNameInUse(TestCase):
 
     def create_app(self):
@@ -221,7 +229,8 @@ class TestNameInUse(TestCase):
 
         # create a user
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
-        test_user = User(username='testuser', firstname='t', lastname='t', email='example@example.com',password=hashed_password)
+        test_user = User(username='testuser', firstname='t', lastname='t',
+                         email='example@example.com', password=hashed_password)
         db.session.add(test_user)
         db.session.commit()
 
@@ -245,6 +254,7 @@ class TestNameInUse(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Username exists, try a different name.', response.data)
+
 
 class TestNoSpecialCharPassword(TestCase):
 
@@ -277,7 +287,8 @@ class TestNoSpecialCharPassword(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(
-            b'Password must contain at least one special character.', response.data)   
+            b'Password must contain at least one special character.', response.data)
+
 
 class TestNoCapsPassword(TestCase):
 
@@ -311,7 +322,8 @@ class TestNoCapsPassword(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Password must contain at least one capital letter.', response.data)
-        
+
+
 class TestInvalidLengthPassword(TestCase):
 
     def create_app(self):
@@ -344,7 +356,8 @@ class TestInvalidLengthPassword(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Password must be at least 8 characters long.', response.data)
-        
+
+
 class TestPasswordsMismatch(TestCase):
 
     def create_app(self):
@@ -378,6 +391,7 @@ class TestPasswordsMismatch(TestCase):
         self.assertIn(
             b'Passwords do not match.', response.data)
 
+
 class TestUserSearch(TestCase):
 
     def create_app(self):
@@ -391,8 +405,10 @@ class TestUserSearch(TestCase):
         db.create_all()
         self.client = app.test_client()
         # Add a couple of users to search
-        user1 = User(username='john_doe', firstname='John', lastname='Doe', email='john@example.com', password=bcrypt.generate_password_hash('test').decode('utf-8'))
-        user2 = User(username='jane_doe', firstname='Jane', lastname='Doe', email='jane@example.com', password=bcrypt.generate_password_hash('test').decode('utf-8'))
+        user1 = User(username='john_doe', firstname='John', lastname='Doe', email='john@example.com',
+                     password=bcrypt.generate_password_hash('test').decode('utf-8'))
+        user2 = User(username='jane_doe', firstname='Jane', lastname='Doe', email='jane@example.com',
+                     password=bcrypt.generate_password_hash('test').decode('utf-8'))
         db.session.add_all([user1, user2])
         db.session.commit()
 
@@ -411,8 +427,9 @@ class TestUserSearch(TestCase):
         response = self.client.get('/profile?q=jane', follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         # Check if the search results contain the expected username
-        self.assertIn(b'jane_doe', response.data, "Search did not return expected results")
-        
+        self.assertIn(b'jane_doe', response.data,
+                      "Search did not return expected results")
+
 
 class TestFriendRequest(unittest.TestCase):
 
@@ -426,19 +443,24 @@ class TestFriendRequest(unittest.TestCase):
         self.app = self.create_app()
         self.client = self.app.test_client()
         db.create_all()
-        
+
         # Create test users
         bcrypt = Bcrypt(self.app)
-        hashed_password1 = bcrypt.generate_password_hash("password1").decode('utf-8')
-        hashed_password2 = bcrypt.generate_password_hash("password2").decode('utf-8')
-        user1 = User(username='user1', password=hashed_password1, firstname='User', lastname='One', email='user1@example.com')
-        user2 = User(username='user2', password=hashed_password2, firstname='User', lastname='Two', email='user2@example.com')
+        hashed_password1 = bcrypt.generate_password_hash(
+            "password1").decode('utf-8')
+        hashed_password2 = bcrypt.generate_password_hash(
+            "password2").decode('utf-8')
+        user1 = User(username='user1', password=hashed_password1,
+                     firstname='User', lastname='One', email='user1@example.com')
+        user2 = User(username='user2', password=hashed_password2,
+                     firstname='User', lastname='Two', email='user2@example.com')
         db.session.add(user1)
         db.session.add(user2)
         db.session.commit()
 
         # Login as user1 to send friend requests
-        self.client.post('/login', data=dict(username='user1', password='password1'))
+        self.client.post(
+            '/login', data=dict(username='user1', password='password1'))
 
     def tearDown(self):
         db.session.remove()
@@ -447,58 +469,69 @@ class TestFriendRequest(unittest.TestCase):
     def test_send_friend_request(self):
         # Test sending a friend request
         response = self.client.post('/send_friend_request/user2')
-        self.assertEqual(response.status_code, 302) 
-        
+        self.assertEqual(response.status_code, 302)
+
         # Verify the friend request is in the database
-        friend_request = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first()
+        friend_request = FriendRequest.query.filter_by(
+            sender_id=1, receiver_id=2).first()
         self.assertIsNotNone(friend_request)
         self.assertEqual(friend_request.status, 'pending')
 
     def test_accept_friend_request(self):
         # Assuming we have a friend request from user1 to user2
         self.test_send_friend_request()
-        
+
         # Logout user1 and login as user2 to accept the request
         self.client.get('/logout')
-        self.client.post('/login', data=dict(username='user2', password='password2'))
+        self.client.post(
+            '/login', data=dict(username='user2', password='password2'))
 
         # Accept the friend request
-        request_id = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first().id
+        request_id = FriendRequest.query.filter_by(
+            sender_id=1, receiver_id=2).first().id
         response = self.client.post(f'/accept_friend_request/{request_id}')
-        self.assertEqual(response.status_code, 302) 
-        
+        self.assertEqual(response.status_code, 302)
+
         # Verify the friend request status is now 'accepted'
         friend_request = FriendRequest.query.get(request_id)
         self.assertEqual(friend_request.status, 'accepted')
+
     def test_deny_friend_request(self):
         # First, send a friend request from user1 to user2
         self.test_send_friend_request()
-        
+
         # Logout user1 and login as user2 to deny the request
         self.client.get('/logout')
-        self.client.post('/login', data=dict(username='user2', password='password2'))
+        self.client.post(
+            '/login', data=dict(username='user2', password='password2'))
 
         # Deny the friend request
-        request_id = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first().id
+        request_id = FriendRequest.query.filter_by(
+            sender_id=1, receiver_id=2).first().id
         response = self.client.post(f'/deny_friend_request/{request_id}')
-        self.assertEqual(response.status_code, 302)  # assuming redirect on success
-        
+        # assuming redirect on success
+        self.assertEqual(response.status_code, 302)
+
         # Verify the friend request has been removed from the database
         denied_request = FriendRequest.query.get(request_id)
-        self.assertIsNone(denied_request, "The friend request should be deleted after denial")
+        self.assertIsNone(
+            denied_request, "The friend request should be deleted after denial")
 
     def test_cancel_friend_request(self):
         # Send a friend request from user1 to user2
         self.test_send_friend_request()
 
         # Cancel the friend request
-        request_id = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first().id
+        request_id = FriendRequest.query.filter_by(
+            sender_id=1, receiver_id=2).first().id
         response = self.client.post(f'/cancel_friend_request/{request_id}')
-        self.assertEqual(response.status_code, 302)  # assuming redirect on success
-        
+        # assuming redirect on success
+        self.assertEqual(response.status_code, 302)
+
         # Verify the friend request has been removed from the database
         canceled_request = FriendRequest.query.get(request_id)
-        self.assertIsNone(canceled_request, "The friend request should be deleted after cancellation")
+        self.assertIsNone(
+            canceled_request, "The friend request should be deleted after cancellation")
 
 
 class CreateGroup(unittest.TestCase):
@@ -513,54 +546,61 @@ class CreateGroup(unittest.TestCase):
         self.app = self.create_app()
         self.client = self.app.test_client()
         db.create_all()
-        
+
         # Create test users
-        user1 = User(username='user1', firstname='User', lastname='One', email='user1@example.com', password=bcrypt.generate_password_hash('password1').decode('utf-8'))
-        user2 = User(username='user2', firstname='User', lastname='Two', email='user2@example.com', password=bcrypt.generate_password_hash('password2').decode('utf-8'))
+        user1 = User(username='user1', firstname='User', lastname='One', email='user1@example.com',
+                     password=bcrypt.generate_password_hash('password1').decode('utf-8'))
+        user2 = User(username='user2', firstname='User', lastname='Two', email='user2@example.com',
+                     password=bcrypt.generate_password_hash('password2').decode('utf-8'))
         db.session.add(user1)
         db.session.add(user2)
         db.session.commit()
 
-        self.client.post('/login', data=dict(username='user1', password='password1'))
+        self.client.post(
+            '/login', data=dict(username='user1', password='password1'))
 
     def tearDown(self):
         db.session.remove()
         db.drop_all()
-        
+
     def send_friend_request(self):
         # Test sending a friend request
         response = self.client.post('/send_friend_request/user2')
-        self.assertEqual(response.status_code, 302) 
-        
+        self.assertEqual(response.status_code, 302)
+
         # Verify the friend request is in the database
-        friend_request = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first()
+        friend_request = FriendRequest.query.filter_by(
+            sender_id=1, receiver_id=2).first()
         self.assertIsNotNone(friend_request)
         self.assertEqual(friend_request.status, 'pending')
-    
+
     def accept_friend_request(self):
         # Assuming we have a friend request from user1 to user2
         self.send_friend_request()
-        
+
         # Logout user1 and login as user2 to accept the request
         self.client.get('/logout')
-        self.client.post('/login', data=dict(username='user2', password='password2'))
+        self.client.post(
+            '/login', data=dict(username='user2', password='password2'))
 
         # Accept the friend request
-        request_id = FriendRequest.query.filter_by(sender_id=1, receiver_id=2).first().id
+        request_id = FriendRequest.query.filter_by(
+            sender_id=1, receiver_id=2).first().id
         response = self.client.post(f'/accept_friend_request/{request_id}')
-        self.assertEqual(response.status_code, 302) 
-        
+        self.assertEqual(response.status_code, 302)
+
         # Verify the friend request status is now 'accepted'
         friend_request = FriendRequest.query.get(request_id)
         self.assertEqual(friend_request.status, 'accepted')
 
     def test_create_group_with_friend(self):
         self.accept_friend_request()
-    
+
         user2 = User.query.filter_by(email='user2@example.com').first()
 
     # Ensure you're logged in as user1 and then create the group
-        self.client.post('/login', data=dict(username='user1', password='password1'))
+        self.client.post(
+            '/login', data=dict(username='user1', password='password1'))
         self.client.post('/group', data={
             'group_name': 'Besties',
             'selected_friends': [str(user2.id)]
@@ -568,10 +608,13 @@ class CreateGroup(unittest.TestCase):
 
         new_group = Group.query.filter_by(name='Besties').first()
         self.assertIsNotNone(new_group, "Group was not created")
-    
+
     # Retrieve group members
-        group_members = GroupMember.query.filter_by(group_id=new_group.id).all()
-        self.assertTrue(any(member.user_id == user2.id for member in group_members), "User2 is not a member of the new group")
+        group_members = GroupMember.query.filter_by(
+            group_id=new_group.id).all()
+        self.assertTrue(any(member.user_id == user2.id for member in group_members),
+                        "User2 is not a member of the new group")
+
 
 class GroupTestCase(unittest.TestCase):
     def create_app(self):
@@ -587,7 +630,8 @@ class GroupTestCase(unittest.TestCase):
 
         # Create test users
         for i in range(1, 5):
-            user = User(username=f'user{i}', firstname ='test', lastname ='user', email=f'user{i}@example.com', password=bcrypt.generate_password_hash(f'password{i}'))
+            user = User(username=f'user{i}', firstname='test', lastname='user',
+                        email=f'user{i}@example.com', password=bcrypt.generate_password_hash(f'password{i}'))
             db.session.add(user)
         db.session.commit()
 
@@ -597,7 +641,6 @@ class GroupTestCase(unittest.TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
-        
 
     def login(self, username, password):
         return self.client.post('/login', data={'username': username, 'password': password}, follow_redirects=True)
@@ -610,38 +653,42 @@ class GroupTestCase(unittest.TestCase):
         for user in users:
             for friend in users:
                 if user.id != friend.id:
-                # Check if the friendship (accepted request) already exists to avoid duplicates
+                    # Check if the friendship (accepted request) already exists to avoid duplicates
                     existing_request = FriendRequest.query.filter(
                         ((FriendRequest.sender_id == user.id) & (FriendRequest.receiver_id == friend.id)) |
-                        ((FriendRequest.receiver_id == user.id) & (FriendRequest.sender_id == friend.id))
+                        ((FriendRequest.receiver_id == user.id) &
+                         (FriendRequest.sender_id == friend.id))
                     ).first()
-                
+
                     if not existing_request:
                         # Directly create an accepted friend request between the users
-                        new_request = FriendRequest(sender_id=user.id, receiver_id=friend.id, status='accepted')
+                        new_request = FriendRequest(
+                            sender_id=user.id, receiver_id=friend.id, status='accepted')
                         db.session.add(new_request)
         db.session.commit()
-
 
     def test_group_creation(self):
         # Login as user1
         self.login('user1', 'password1')
 
         # Users 1 and 2 create a group named "group1"
-        response = self.client.post('/group', data={'group_name': 'group1', 'selected_friends': '2'}, follow_redirects=True)
+        response = self.client.post(
+            '/group', data={'group_name': 'group1', 'selected_friends': '2'}, follow_redirects=True)
         self.assertIn(b'Group created successfully.', response.data)
 
         # Attempt by user3 to create a group named "group1" with user2 should fail
         self.logout()
         self.login('user3', 'password3')
-        response = self.client.post('/group', data={'group_name': 'group1', 'selected_friends': '2'}, follow_redirects=True)
+        response = self.client.post(
+            '/group', data={'group_name': 'group1', 'selected_friends': '2'}, follow_redirects=True)
         self.assertIn(b'A group with this name already exists', response.data)
 
         # User3 creates a group named "group1" with user4, which should succeed
-        response = self.client.post('/group', data={'group_name': 'group1', 'selected_friends': '4'}, follow_redirects=True)
+        response = self.client.post(
+            '/group', data={'group_name': 'group1', 'selected_friends': '4'}, follow_redirects=True)
         self.assertIn(b'Group created successfully.', response.data)
 
-        
+
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestRegistration)
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogin))
@@ -649,18 +696,18 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestLogout))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestEmailInUse))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNameInUse))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoSpecialCharPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestNoCapsPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestInvalidLengthPassword))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestPasswordsMismatch))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
+        TestNoSpecialCharPassword))
+    suite.addTests(unittest.TestLoader(
+    ).loadTestsFromTestCase(TestNoCapsPassword))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(
+        TestInvalidLengthPassword))
+    suite.addTests(unittest.TestLoader(
+    ).loadTestsFromTestCase(TestPasswordsMismatch))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserSearch))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFriendRequest))
+    suite.addTests(unittest.TestLoader(
+    ).loadTestsFromTestCase(TestFriendRequest))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(CreateGroup))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(GroupTestCase))
-
-
-    
-    
-
 
     unittest.TextTestRunner(resultclass=CustomTestResult).run(suite)
