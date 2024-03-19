@@ -43,8 +43,11 @@ class UploadForm(FlaskForm):
         FileRequired(),
         FileAllowed(['gpx'], 'Only GPX files can be uploaded!')
     ])
+
+
     submit = SubmitField('Upload')
 
 class VerifyLoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Disable Account')
+
