@@ -407,7 +407,9 @@ class TestFileUpload(TestCase):
         # Create and login a test user
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
         test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com', password=hashed_password)
+        subscription_details_for_user_has_paid = Subscriptions(user_id=1, subscription_type="Weekly", payment_date=datetime.utcnow() + timedelta(days=7))
         db.session.add(test_user)
+        db.session.add(subscription_details_for_user_has_paid)        
         db.session.commit()
 
         # Login
@@ -462,7 +464,9 @@ class TestFileDownload(TestCase):
         # Create and login a test user
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
         test_user = User(username='testuser', firstname='t', lastname='t', email='t@t.com', password=hashed_password)
+        subscription_details_for_user_has_paid = Subscriptions(user_id=1, subscription_type="Weekly", payment_date=datetime.utcnow() + timedelta(days=7))
         db.session.add(test_user)
+        db.session.add(subscription_details_for_user_has_paid)
         db.session.commit()
 
         # Login
