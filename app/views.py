@@ -848,7 +848,7 @@ def generate_map(filename):
                             for point in track_points]
             # create a polyline with a different color for each track
             folium.PolyLine(track_coords, color=colors[i % len(colors)],
-                            weight=4.5, opacity=1).add_to(fg_tracks)
+                            weight=4.5, opacity=1, tooltip=track.name).add_to(fg_tracks)
             
             stats[track.name] = 'STATS'
 
@@ -868,9 +868,10 @@ def generate_map(filename):
             total_elevation_gain = 0
             previous_elevation = track_points[0].elevation
             for point in track_points:
-                if point.elevation > previous_elevation:
-                    total_elevation_gain += point.elevation - previous_elevation
-                previous_elevation = point.elevation
+                if point.elevation is not None and previous_elevation is not None:
+                    if point.elevation > previous_elevation:
+                        total_elevation_gain += point.elevation - previous_elevation
+                previous_elevation = point.elevation if point.elevation is not None else previous_elevation
             stats[f"Total elevation gain  {track.name}"] = "{:.2f} ft".format(total_elevation_gain)
 
             # Calculate elevation data
