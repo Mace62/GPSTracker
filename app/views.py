@@ -908,6 +908,7 @@ def generate_map(filename):
 
 
 @app.route('/check_map_status/<filename>')
+@login_required
 def check_map_status(filename):
     user_folder = os.path.join(
         app.root_path, 'static', 'uploads', str(current_user.id))
