@@ -833,7 +833,7 @@ def generate_map(filename):
             icon=folium.Icon(color='red')
         ).add_to(fg_waypoints)
 
-    colors = ["blue", "red", "green", "orange", "purple"]
+    colors = ["blue", "red", "green", "orange", "purple", "yellow", "pink", "brown", "gray"]
     # create a feature group for tracks
     stats = {}
     elevation_data = []
