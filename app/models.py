@@ -14,12 +14,35 @@ class User(db.Model, UserMixin):
     lastname = db.Column(db.String(120), index = True, nullable = False)
     email = db.Column(db.String(120), index = True, unique = True, nullable = False)
     password = db.Column(db.String(120), index = True, nullable = False)
+    
+    sent_requests = db.relationship('FriendRequest', foreign_keys='FriendRequest.sender_id',
+                                    backref='sender', lazy='dynamic')
+    received_requests = db.relationship('FriendRequest', foreign_keys='FriendRequest.receiver_id',
+                                        backref='receiver', lazy='dynamic')
     has_paid = db.Column(db.Boolean, default=True)
 
 
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    
+class FriendRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status = db.Column(db.String(10), nullable=False)  # Can be 'pending', 'accepted', 'declined'
+
+class Group(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    members = db.relationship('GroupMember', backref='group', lazy='dynamic')
+
+class GroupMember(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref='group_memberships', lazy=True)
 
 class GPXFileData(db.Model):
     __tablename__ = 'gpxfiledata'

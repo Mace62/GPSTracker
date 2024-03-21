@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField, HiddenField
+from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField, HiddenField,SelectField
 from flask_wtf.file import FileField, FileRequired
 from wtforms import TextAreaField, StringField, PasswordField, FloatField, IntegerField, EmailField, SubmitField
 from wtforms.validators import DataRequired, ValidationError, Email
@@ -32,6 +32,21 @@ class RegisterForm(FlaskForm):
         
         if not any(char.isupper() for char in password):
             raise ValidationError('Password must contain at least one capital letter.')
+        
+class SearchForm(FlaskForm):
+    query = StringField('Search')
+    submit = SubmitField('Search')
+    
+
+
+class GroupCreationForm(FlaskForm):
+    group_name = StringField('Group name', validators=[DataRequired()])
+    selected_friends = HiddenField()  # Stores IDs of selected friends
+    submit = SubmitField('Create Group')
+    
+
+class GroupSelectionForm(FlaskForm):
+    group = SelectField('Select a Group', choices=[('', '--- Select a Group ---')], validate_choice=False)
 
 # Payment form to get preferred payment option
 class PaymentForm(FlaskForm):
@@ -43,8 +58,11 @@ class UploadForm(FlaskForm):
         FileRequired(),
         FileAllowed(['gpx'], 'Only GPX files can be uploaded!')
     ])
+
+
     submit = SubmitField('Upload')
 
 class VerifyLoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Disable Account')
+

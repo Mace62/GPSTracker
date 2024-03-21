@@ -9,3 +9,4 @@ migrations
 /static/uploads/**
 /static/uploads/
 **/uploads
+.vscode/settings.json

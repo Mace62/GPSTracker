@@ -1,7 +1,7 @@
 from flask import *
 from app import app, models, db
 from flask import render_template, flash, request, redirect, url_for, send_from_directory, session
-from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm, VerifyLoginForm
+from app.forms import LoginForm, RegisterForm, UploadForm, PaymentForm, VerifyLoginForm, SearchForm, GroupCreationForm, GroupSelectionForm
 from app.models import GPXFile
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_bcrypt import Bcrypt
@@ -15,7 +15,10 @@ import math
 import folium
 from geopy.distance import geodesic
 
-app.config['SECRET_KEY'] = 'your_secret_key'
+
+
+
+#app.config['SECRET_KEY'] = 'your_secret_key'
 
 # Setting global secret key for Stripe API
 stripe.api_key = "sk_test_51OlhekAu65yEau3hdrHvRwjs8vb8GM2NJnjLuJQYuGHeqgi5nYseoo8D2jIE4qKCvs7EPhzQIOJfQKQUej6SYD0600PGbY7CmA"
@@ -96,14 +99,6 @@ def select_payment():
 
     return render_template("/select_payment.html", form=form)
 
-
-@app.route('/profile', methods=['GET', 'POST'])
-@login_required
-def profile():
-    subscription = models.Subscriptions.query.filter_by(
-        user_id=current_user.id).first()
-    subscription_type = subscription.subscription_type
-    return render_template('profile.html', subscription_type=subscription_type)
 
 
 @app.route('/change_subscription', methods=['GET', 'POST'])
@@ -360,6 +355,10 @@ def register():
             return render_template('select_payment.html', form=PaymentForm())
         except Exception as e:
             flash(f"Error: {e}")
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(error)
 
     return render_template('register.html', form=form)
 
@@ -401,6 +400,268 @@ def login():
 @app.route('/admin')
 @login_required
 def admin():
+    return render_template('admin.html')
+
+
+def get_friends_choices(user_id):
+    sent_friend_requests = db.session.query(models.FriendRequest.receiver_id).filter(
+        models.FriendRequest.sender_id == user_id, models.FriendRequest.status == 'accepted').all()
+    received_friend_requests = db.session.query(models.FriendRequest.sender_id).filter(
+        models.FriendRequest.receiver_id == user_id, models.FriendRequest.status == 'accepted').all()
+
+    friend_ids = [user_id for (
+        user_id,) in sent_friend_requests + received_friend_requests]
+
+    friends = models.User.query.filter(
+        models.User.id.in_(friend_ids)).all() if friend_ids else []
+
+    return [(friend.id, friend.username) for friend in friends]
+
+
+def perform_user_search(query, current_user):
+    results = []
+    follow_status = {}
+    if query:
+        results = models.User.query.filter(
+            models.User.username.ilike(f'%{query}%'),
+            models.User.id != current_user.id
+        ).all()
+
+        for user in results:
+            # Check for requests sent by the current user
+            sent_request = models.FriendRequest.query.filter_by(
+                sender_id=current_user.id, receiver_id=user.id).first()
+            if sent_request:
+                follow_status[user.id] = {
+                    'status': sent_request.status, 'request_id': sent_request.id}
+
+            else:
+                # Check for requests received by the current user
+                received_request = models.FriendRequest.query.filter_by(
+                    sender_id=user.id, receiver_id=current_user.id).first()
+                if received_request:
+                    if(received_request.status == "pending"):
+                        follow_status[user.id] = {
+                            'status': received_request.status + "_received", 'request_id': received_request.id}
+
+                    else:
+                        follow_status[user.id] = {
+                            'status': received_request.status, 'request_id': received_request.id}
+
+        for user in results:
+            if user.id not in follow_status:
+                follow_status[user.id] = {
+                    'status': 'no_action', 'request_id': None}
+    return results, follow_status
+
+
+@app.route('/profile',methods=['GET', 'POST'])
+@login_required
+def profile():
+    subscription = models.Subscriptions.query.filter_by(
+        user_id=current_user.id).first()
+    subscription_type = subscription.subscription_type
+    query = request.args.get('q')
+    form = SearchForm()
+    received_requests = current_user.received_requests.filter_by(
+        status='pending').all()
+    # Fetch received friend requests
+    friend_ids = [friend_id for friend_id,
+                  _ in get_friends_choices(current_user.id)]
+    friends = models.User.query.filter(
+        models.User.id.in_(friend_ids)).all() if friend_ids else []
+    results = []
+    follow_status = {}
+
+    if query:
+        results, follow_status = perform_user_search(query, current_user)
+        # Update follow_status for each user based on friendship
+
+    return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends,subscription_type=subscription_type)
+
+
+@app.route('/send_friend_request/<username>', methods=['POST'])
+@login_required
+def send_friend_request(username):
+    user_to_request = models.User.query.filter_by(
+        username=username).first_or_404()
+
+    # Check if the user is trying to send a friend request to themselves
+    if current_user.id == user_to_request.id:
+        flash("You cannot send a friend request to yourself.", "danger")
+        return redirect(url_for('profile', username=username))
+
+    # Check if there is already a friend request sent or if they are already friends
+    existing_request = models.FriendRequest.query.filter(
+        ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == user_to_request.id)) |
+        ((models.FriendRequest.receiver_id == current_user.id) &
+         (models.FriendRequest.sender_id == user_to_request.id))
+    ).first()
+
+    if existing_request:
+        if existing_request.status == 'pending':
+            flash("Friend request already sent.", "info")
+        elif existing_request.status == 'accepted':
+            flash("You are already friends.", "info")
+        # Optionally handle 'declined' and 'removed' statuses here
+    else:
+        # If no existing request, create a new friend request
+        new_request = models.FriendRequest(
+            sender_id=current_user.id, receiver_id=user_to_request.id, status='pending')
+        db.session.add(new_request)
+        db.session.commit()
+        flash(f"Friend request sent to {username}.", "success")
+
+    return redirect(url_for('profile', username=username))
+
+
+@app.route('/deny_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def deny_friend_request(request_id):
+    request = models.FriendRequest.query.get_or_404(request_id)
+    if request.receiver_id == current_user.id:
+        # Delete the friend request instead of changing its status
+        db.session.delete(request)
+        db.session.commit()
+        flash('Friend request denied.', 'success')
+    else:
+        flash('Unauthorized action.', 'danger')
+    return redirect(url_for('profile'))
+
+
+@app.route('/accept_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def accept_friend_request(request_id):
+
+    request = models.FriendRequest.query.get_or_404(request_id)
+
+    # Now, using the friend request, fetch the sender and receiver
+    sender = models.User.query.get(request.sender_id)
+    receiver = models.User.query.get(request.receiver_id)
+
+    if request.receiver_id == current_user.id:
+        request.status = 'accepted'
+        db.session.commit()
+        flash('Friend request accepted.', 'success')
+    else:
+        flash('Unauthorized action.', 'danger')
+
+    return redirect(url_for('profile'))
+
+
+@app.route('/remove_friend/<int:friend_id>', methods=['POST'])
+@login_required
+def remove_friend(friend_id):
+    # Assuming 'friend_id' is the user ID of the friend to be removed
+
+    # Check if the current user has a friend request with the given friend_id that's accepted
+    friend_request = models.FriendRequest.query.filter(
+        models.FriendRequest.status == 'accepted',
+        ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == friend_id)) |
+        ((models.FriendRequest.sender_id == friend_id) &
+         (models.FriendRequest.receiver_id == current_user.id))
+    ).first()
+
+    if not friend_request:
+        flash("No friend connection found.", "danger")
+        return redirect(url_for('profile'))
+
+    db.session.delete(friend_request)
+
+    db.session.commit()
+    flash('Friend removed successfully.', 'success')
+    return redirect(url_for('profile'))
+
+
+@app.route('/cancel_friend_request/<int:request_id>', methods=['POST'])
+@login_required
+def cancel_friend_request(request_id):
+    friend_request = models.FriendRequest.query.get_or_404(request_id)
+    if friend_request.sender_id == current_user.id and friend_request.status == 'pending':
+        db.session.delete(friend_request)
+        db.session.commit()
+        flash('Friend request canceled.', 'success')
+    else:
+        flash('Unauthorized action or request not found.', 'danger')
+    return redirect(url_for('profile'))
+
+
+def create_group(user_ids, group_name):
+    # Create a new group instance
+    new_group = models.Group(name=group_name)
+    db.session.add(new_group)
+    db.session.flush()
+
+    # Add the current user and selected friends to the group
+    for user_id in user_ids:
+        # Ensure no attempt to add non-existent users
+        if models.User.query.get(user_id):
+            new_group_member = models.GroupMember(
+                group_id=new_group.id, user_id=user_id)
+            db.session.add(new_group_member)
+
+    db.session.commit()
+    return new_group
+
+
+@app.route('/group', defaults={'group_id': None}, methods=['GET', 'POST'])
+@app.route('/group/<group_id>', methods=['GET', 'POST'])
+@login_required
+def group(group_id):
+    creation_form = GroupCreationForm()
+    selection_form = GroupSelectionForm()
+    user_groups = models.GroupMember.query.filter_by(
+        user_id=current_user.id).all()
+    # Extract group IDs for querying Group details
+    group_ids = [membership.group_id for membership in user_groups]
+    groups = models.Group.query.filter(
+        models.Group.id.in_(group_ids)).all() if group_ids else []
+    selection_form.group.choices = [
+        ('', '--- Select a Group ---')] + [(g.id, g.name) for g in groups]
+
+    if creation_form.validate_on_submit():
+        # Parse the form data to get selected friend IDs and include the current user's ID
+        group_user_ids = request.form.get('selected_friends').split(',')
+        group_user_ids.append(str(current_user.id))
+        # Extracted name of the group from the form
+        group_name = creation_form.group_name.data
+
+        # Prepare a list of all user IDs (the current user and selected friends)
+        user_ids = [current_user.id] + \
+            [int(uid) for uid in group_user_ids if uid.isdigit()]
+
+        # Query to check if any user in the user_ids list already has a group with the given name
+        existing_group = models.Group.query.join(models.GroupMember).filter(
+            models.Group.name == group_name, models.GroupMember.user_id.in_(user_ids)).first()
+
+        if existing_group:
+            # If such a group exists, inform the user and do not proceed with creating the new group
+            flash(
+                'A group with this name already exists within your selected group of friends.', 'error')
+        else:
+            # If the name is unique, proceed with group creation
+            new_group = create_group(group_user_ids, group_name)
+            flash('Group created successfully.', 'success')
+            return redirect(url_for('group'))  # Redirect as appropriate
+
+    friends_choices = get_friends_choices(current_user.id)
+
+    if group_id is not None and group_id != '':
+        selection_form.group.data = group_id
+    else:
+        # Logic for rendering the default /group page...
+        selection_form.group.data = ''
+
+    if group_id:
+        selected_group = models.Group.query.get(group_id)
+        if selected_group:
+            display_group_name = selected_group.name
+        else:
+            display_group_name = '-- Select a Group --'
+    else:
+        display_group_name = '-- Select a Group --'
+
+    return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name)
     if not models.Admin.query.filter_by(user_id=current_user.id).first():
         flash('You are not an admin!')
         return redirect(url_for('homepage'))
@@ -513,6 +774,7 @@ def upload_file():
         for field, errors in form.errors.items():
             for error in errors:
                 flash(error, 'danger')
+
     return render_template('upload.html', form=form)
 
 
@@ -571,19 +833,52 @@ def generate_map(filename):
             icon=folium.Icon(color='red')
         ).add_to(fg_waypoints)
 
-    colors = ["blue", "red", "green", "orange", "purple"]
+    colors = ["blue", "red", "green", "orange", "purple", "yellow", "pink", "brown", "gray"]
     # create a feature group for tracks
-    for i, track in enumerate(tracks):
-        fg_tracks = folium.FeatureGroup(name=track.name).add_to(run_map)
-        track_points = models.GPXTrackPoint.query.filter_by(
-            track_id=track.id).all()
+    stats = {}
+    elevation_data = []
+    if tracks:
+        for i, track in enumerate(tracks):
+            fg_tracks = folium.FeatureGroup(name=track.name).add_to(run_map)
+            track_points = models.GPXTrackPoint.query.filter_by(
+                track_id=track.id).all()
 
-        # create a list of coordinates for the trackpoints
-        track_coords = [[point.latitude, point.longitude]
-                        for point in track_points]
-        # create a polyline with a different color for each track
-        folium.PolyLine(track_coords, color=colors[i % len(colors)],
-                        weight=4.5, opacity=1).add_to(fg_tracks)
+            # create a list of coordinates for the trackpoints
+            track_coords = [[point.latitude, point.longitude]
+                            for point in track_points]
+            # create a polyline with a different color for each track
+            folium.PolyLine(track_coords, color=colors[i % len(colors)],
+                            weight=4.5, opacity=1, tooltip=track.name).add_to(fg_tracks)
+            
+            stats[track.name] = 'STATS'
+
+            # Calculate total distance for this track
+            total_distance = total_distance_for_gpx(track_points)
+            stats[f"Total distance  {track.name}"] = "{:.2f} km".format(total_distance)
+
+            # Calculate total time for this track
+            total_time = total_time_for_gpx(track_points)
+            stats[f"Total time  {track.name}"] = "{} hrs".format(total_time)
+
+            # Calculate average speed for this track
+            average_speed = average_speed_for_gpx(track_points)
+            stats[f"Average Speed  {track.name}"] = "{:.2f} km/h".format(average_speed)
+
+                # Calculate total elevation gain for this track
+            total_elevation_gain = 0
+            previous_elevation = track_points[0].elevation
+            for point in track_points:
+                if point.elevation is not None and previous_elevation is not None:
+                    if point.elevation > previous_elevation:
+                        total_elevation_gain += point.elevation - previous_elevation
+                previous_elevation = point.elevation if point.elevation is not None else previous_elevation
+            stats[f"Total elevation gain  {track.name}"] = "{:.2f} ft".format(total_elevation_gain)
+
+            # Calculate elevation data
+            elevation_data.append({
+                'name': track.name,
+                'elevation': [point.elevation for point in track_points]
+            })
 
     # add legend in top right corner
     run_map.add_child(folium.LayerControl(
@@ -604,22 +899,16 @@ def generate_map(filename):
     with open(os.path.join(user_folder, map_file), 'w') as f:
         f.write(modified_html_content)
 
-    # if track_points:
-    #     total_distance = total_distance_for_gpx(track_points)
-    #     print(total_distance)
-    #     total_time = total_time_for_gpx(track_points)
-    #     print(total_time)
-    #     average_speed = average_speed_for_gpx(track_points)
-    #     print("Average Speed:", average_speed, "km/h")
-
     map_file = f'{filename}_map.html'
     run_map.save(os.path.join(user_folder, map_file))
 
     # Redirect to the route that will serve the map
-    return redirect(url_for('serve_map', filename=map_file))
+    return stats, elevation_data
+
 
 
 @app.route('/check_map_status/<filename>')
+@login_required
 def check_map_status(filename):
     user_folder = os.path.join(
         app.root_path, 'static', 'uploads', str(current_user.id))
@@ -647,12 +936,13 @@ def serve_map(filename):
 @app.route('/view/<filename>')
 @login_required
 def view(filename):
-    generate_map(filename)
+    stats, elevation_data = generate_map(filename)
+    # generate_map(filename)
     user_folder = os.path.join(
         app.root_path, 'static', 'uploads', str(current_user.id))
     map_file = f'{filename}_map.html'
     map_url = url_for('serve_map', filename=map_file)
-    return render_template('view_map.html', map_url=map_url, filename=filename)
+    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats, elevation_data=elevation_data)
 
 
 @app.route('/download/<filename>')
@@ -714,6 +1004,10 @@ def total_distance_for_gpx(gpx_points):
 def total_time_for_gpx(gpx_points):
     start_time = gpx_points[0].time
     end_time = gpx_points[-1].time
+
+    if start_time is None or end_time is None:
+        return timedelta(seconds=0)
+
     total_time = end_time - start_time
     return total_time
 
@@ -722,10 +1016,18 @@ def total_time_for_gpx(gpx_points):
 
 def average_speed_for_gpx(gpx_points):
     total_distance = total_distance_for_gpx(gpx_points)
-    total_time_seconds = total_time_for_gpx(gpx_points).total_seconds()
+    total_time = total_time_for_gpx(gpx_points)
+
+    if total_time is None or total_time.total_seconds() == timedelta(seconds=0):
+        return 0
+
+    total_time_seconds = total_time.total_seconds()
+
     # Convert total time to hours
     total_time_hours = total_time_seconds / 3600
+
     # Calculate average speed in km/h
-    average_speed = total_distance / total_time_hours
+    average_speed = total_distance / total_time_hours if total_time_hours != 0 else 0
+
     return average_speed
 

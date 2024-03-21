@@ -1,0 +1,60 @@
+* {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+
+  
+  .profile-container {
+    display: flex;
+  }
+  
+  .sidebar {
+    flex: 1; /* Adjust the flex ratio as needed */
+    padding: 20px;
+    /* Add additional styling for the sidebar */
+  }
+  
+  .main-content {
+    flex: 3; /* Adjust the flex ratio as needed */
+    padding: 40px;
+    /* Add additional styling for the main content */
+  }
+  
+  
+  input[type="text"] {
+    padding: 10px;
+    margin: 10px 0;
+    width: calc(100% - 40px); /* Full width minus padding */
+    /* Add additional styling for the input */
+  }
+
+
+.friend-card {
+    display: inline-block; /* Display cards horizontally */
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.friend-card.selected {
+    border-color: blue; /* Highlight selected cards */
+}
+
+
+.group-item {
+  margin: 5px 0;
+  padding: 5px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.highlight {
+  background-color: #f0f0f0; /* Or any color that suits your design */
+  border-color: #007bff; /* Bootstrap primary color for example */
+}
