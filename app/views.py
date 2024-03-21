@@ -43,6 +43,12 @@ def load_user(user_id):
 
 @app.route('/')
 def landing():
+    if current_user.is_authenticated:
+        user = models.User.query.filter_by(username = session.get('username')).first()
+        admin = models.Admin.query.filter_by(user_id = user.id).first()
+        if admin:
+            return redirect(url_for('admin'))
+        return redirect(url_for('homepage'))
     return render_template('landing.html')
 
 @app.route('/homepage')
@@ -320,7 +326,7 @@ def login_new_user():
 def logout():
     logout_user()
     flash('You have been logged out.')
-    return redirect(url_for('login'))
+    return redirect(url_for('landing'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
