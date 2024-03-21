@@ -13,6 +13,16 @@
         <script src="https://kit.fontawesome.com/19809d9137.js" crossorigin="anonymous"></script>
         <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Jura" />
         <style>
+        
+            body,
+            html {
+                font-family: 'Jura', sans-serif; /* Change font family to Jura */
+                background-color: #bdb1a0;
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+        
             .card {
                 max-width: 25rem;
                 margin: auto;
@@ -21,77 +31,82 @@
                 border: none;
             }
         
-            body {
-                background-color: #bdb1a0;
-            }
             .navbar {
-                background-color: #343a40;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                background-color: transparent;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 padding-top: 10px;
                 padding-bottom: 10px;
+                font-family: 'Jura', sans-serif; /* Change font family to Jura */
+                border-bottom: 10px solid black; /* Set bottom border to black */
             }
+        
+            .navbar-brand {
+                color: black; /* Set navbar title color to black */
+            }
+        
             .navbar-brand img {
                 height: 40px;
                 width: auto;
             }
+        
             .navbar-brand:hover {
                 opacity: 0.8;
             }
+        
+            .navbar-nav .nav-link {
+                color: black;
+            }
+        
             .header {
                 padding-top: 50px;
                 padding-bottom: 30px;
                 text-align: center;
             }
+        
             .header h1 {
                 font-size: 2.5rem;
                 font-weight: 700;
                 color: #343a40;
             }
+        
             .content-container {
-                /* background-color: #ffffff; */
                 padding: 30px;
                 border-radius: 8px;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             }
+        
             .alert {
                 border-radius: 8px;
             }
+        
             .container {
                 min-height: 100%;
-                padding-bottom: 60px; 
+                padding-bottom: 0; /* Remove padding from the bottom */
                 box-sizing: border-box;
             }
-            .footer {
-                position: fixed;
-                left: 0;
-                bottom: 0;
-                width: 100%;
-                background-color: #333;
-                padding-top: 100px;
+
+                /* Styling for buttons */
+            .btn {
+                background-color: #132b2c;
+                border: 2px solid black;
                 color: white;
-                text-align: center;
-                height: 60px; /* Footer height */
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                padding: 8px 16px;
+                border-radius: 4px;
+                transition: background-color 0.3s, border-color 0.3s, color 0.3s;
             }
-            .footer a {
-                color: #ffffff;
-                text-decoration: none;
+
+            /* Hover effect for buttons */
+            .btn:hover {
+                background-color: black;
+                border-color: #132b2c;
+                color: white;
             }
-            .footer a:hover {
-                text-decoration: underline;
-            }
-            .social-icons a {
-                color: #ffffff;
-                font-size: 1.5rem;
-                margin: 0 10px;
-                transition: opacity 0.3s;
-            }
-            .social-icons a:hover {
-                opacity: 0.8;
-            }
+        
         </style>
+        
+        
+        
+        
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         {% if title %}
             <title>{{ title }}</title>
@@ -104,7 +119,8 @@
     <body>
         <nav class="navbar navbar-expand-lg" style="background-color: clear; padding: 1%; border-bottom: 2px solid #708090; margin-bottom: 20px">
             <a class="navbar-brand">
-                <i class="fas fa-running fa-2x" style="padding-left: 20px; color: white;"></i>
+                <b>TERRATRACKER</b>
+                <i class="fas fa-running fa-2x" style="color: black;"></i>
             </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -112,14 +128,16 @@
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
                 <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="/homepage" style="color: white;"><strong>Home</strong></a></li>
-                    <li class="nav-item"><a class="nav-link" href="/upload" style="color: white;"><strong>Upload</strong></a></li>
-                    <li class="nav-item"><a class="nav-link" href="/myfiles" style="color: white;"><strong>Journeys</strong></a></li>
-                    <li class="nav-item"><a class="nav-link" href="/profile" style="color: white;"><strong>Profile</strong></a></li>
-                    <li class="nav-item"><a class="nav-link" href="/logout" style="color: white;"><strong>Logout</strong></a></li>
+                    <li class="nav-item"><a class="nav-link" href="/homepage" style="color: #132b2c;"><strong>Home</strong></a></li>
+                    <li class="nav-item"><a class="nav-link" href="/upload" style="color: #132b2c;"><strong>Upload</strong></a></li>
+                    <li class="nav-item"><a class="nav-link" href="/myfiles" style="color: #132b2c;"><strong>Journeys</strong></a></li>
+                    <li class="nav-item"><a class="nav-link" href="/profile" style="color: #132b2c;"><strong>Profile</strong></a></li>
+                    <li class="nav-item"><a class="nav-link" href="/groups" style="color: #132b2c;"><strong>Groups</strong></a></li>
+                    <li class="nav-item"><a class="nav-link" href="/logout" style="color: #132b2c;"><strong>Logout</strong></a></li>
                 </ul>
             </div>            
         </nav>
+        
         
 
         <div class="container">
@@ -144,16 +162,6 @@
             </div>
         </div>
 
-        <footer class="footer">
-            <div class="container">
-                <div class="social-icons mb-3">
-                    <a href="#facebook" class="fab fa-facebook"></a>
-                    <a href="#twitter" class="fab fa-twitter"></a>
-                    <a href="#instagram" class="fab fa-instagram"></a>
-                </div>
-                <p>&copy; 2024 TerraTracker. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
-            </div>
-        </footer>
 
         <!-- JavaScript -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>

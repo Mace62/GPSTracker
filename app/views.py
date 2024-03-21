@@ -430,7 +430,8 @@ def perform_user_search(query, current_user):
     if query:
         results = models.User.query.filter(
             models.User.username.ilike(f'%{query}%'),
-            models.User.id != current_user.id
+            models.User.id != current_user.id,
+            models.User.username != 'admin'
         ).all()
 
         for user in results:
