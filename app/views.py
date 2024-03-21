@@ -326,7 +326,7 @@ def logout():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
-
+    create_admin()
     if form.validate_on_submit():
         try:
             if models.User.query.filter_by(
@@ -362,11 +362,9 @@ def register():
 
     return render_template('register.html', form=form)
 
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
+def create_admin():
     if models.User.query.count() == 0:
+        print("NO USERS")
         new_admin = models.User(username="admin", password=bcrypt.generate_password_hash(
             "Admin123!"), firstname="admin", lastname="admin", email="admin@admin.com")
         db.session.add(new_admin)
@@ -374,6 +372,12 @@ def login():
         admin = models.Admin(user_id=new_admin.id)
         db.session.add(admin)
         db.session.commit()
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    create_admin()
     if form.validate_on_submit():
         user = models.User.query.filter_by(username = form.username.data).first()
         # users_subscription - models.Subscriptions.query.filter_by
