@@ -102,18 +102,6 @@ class TestLogin(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             b'Logged in successfully.', response.data)
-    
-    ####   ERASE ONCE COMPLETED    ###
-    def test_wronglogin(self):
-        """Test invalid user login."""
-        # Register a user
-        response = self.client.post('/login', data=dict(
-            username='testuser',
-            password='Wrongpassword!'), follow_redirects=True)
-    
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b'Incorrect username or password. Please try again.', response.data)
         
 class TestWrongLogin(TestCase):
 
@@ -164,6 +152,8 @@ class TestLogout(TestCase):
         hashed_password = bcrypt.generate_password_hash("Testpassword!")
         test_user = User(username='testuser', firstname='t',
                          lastname='t', email='t@t.com', password=hashed_password)
+        subscription_details_for_test_user = Subscriptions(user_id=1, subscription_type="Weekly", payment_date=datetime.utcnow() + timedelta(days=7))
+        db.session.add(subscription_details_for_test_user)
         db.session.add(test_user)
         db.session.commit()
 
@@ -182,8 +172,8 @@ class TestLogout(TestCase):
         response = self.client.get('/logout', follow_redirects=True)
 
         self.assertEqual(response.status_code, 200)
-        # self.assertIn(
-        #     b'You have been logged out.', response.data)
+        self.assertIn(
+            b'You have been logged out.', response.data)
         
 class TestEmailInUse(TestCase):
 
@@ -700,17 +690,16 @@ class TestUserHasNotLoggedIn(TestCase):
         '''Testing for redirects to login page if user has not logged in'''
 
         # This is a blacklist for URL's to not test when looking at login redirects
-        # Add stuff here if you think the URL does not need the @login_required decorator
+        # Add stuff here if you think the URL does not need the @login_required decorator, or is only being POST'ed
         login_redirects_not_to_test = ["/login_new_user", "/register", "/login", "/static/bootstrap/<path:filename>", "/static/<path:filename>", "/", "/accept_friend_request/<int:request_id>","/cancel_friend_request/<int:request_id>","/deny_friend_request/<int:request_id>","/send_friend_request/<username>","/remove_friend/<int:friend_id>"]
-        login_redirects_not_to_test_because_its_under_construction = ["/check_map_status/<filename>"]
+
 
         with self.client as c:
             # Looking across all URL's
             for rule in app.url_map.iter_rules():
                 # Ignoring blacklisted URL's
-
-                ###### GET RID OF THE login_redirects_not_to_test_because_its_under_construction FROM THE IF STATEMENT BELOW #####
-                if rule.rule not in login_redirects_not_to_test and rule.rule not in login_redirects_not_to_test_because_its_under_construction:
+                if rule.rule not in login_redirects_not_to_test:
+                    print(rule.rule)
                     
                     response = c.get(rule.rule)
                     # Check if the redirect location is the login page
@@ -726,6 +715,9 @@ class TestUserHasNotLoggedIn(TestCase):
                     else:
                         # If there is no question mark, use the URL as it is
                         url_before_question_mark = url
+
+                    print(url_before_question_mark)
+                    print(expected_redirect_location)
 
                     self.assertTrue(response.status_code in [301, 302, 303, 305, 307])
                     self.assertEqual(url_before_question_mark, expected_redirect_location)
@@ -1134,8 +1126,7 @@ if __name__ == '__main__':
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXTrack))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestGPXFile))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestUserSearch))
-    suite.addTests(unittest.TestLoader(
-    ).loadTestsFromTestCase(TestFriendRequest))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(TestFriendRequest))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(CreateGroup))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(GroupTestCase))
 
