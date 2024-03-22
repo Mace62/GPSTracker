@@ -1,7 +1,10 @@
-{% extends "base.html" %} {% block content %}
-
+{% extends "base.html" %} {% block content %} {%if not is_pmg%}
 <h1 class="filename" style="text-align: center">Group: {{ group_name }}</h1>
 <h1 style="text-align: center">SHARED JOURNEY</h1>
+{%else%}
+<h1 class="filename" style="text-align: center">PMG: {{ group_name }}</h1>
+<h1 style="text-align: center">ALL JOURNEYS</h1>
+{%endif%}
 
 <!-- Loading Indicator -->
 <div id="loading" style="display: none">Generating map, please wait...</div>

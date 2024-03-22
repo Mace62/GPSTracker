@@ -1,6 +1,9 @@
 {% extends "base.html" %} {% block content %}
 
 <h1 style="text-align: center">MY JOURNEYS</h1>
+
+<a href="/pmgs" class="btn btn-primary">Go to Personal Map Groups</a>
+
 {% if file_entries %}
 <div class="table-responsive">
   <table class="table">
@@ -11,6 +14,7 @@
         <th>Download</th>
         <th>View</th>
         <th>Share</th>
+        <th>Add</th>
         <th>Delete</th>
       </tr>
     </thead>
@@ -29,6 +33,9 @@
         </td>
         <td>
           <a href="{{ url_for('share', filename=entry.filename) }}"> Share</a>
+        </td>
+        <td>
+          <a href="{{ url_for('add', filename=entry.filename) }}"> Add</a>
         </td>
         <td>
           <a href="{{ url_for('delete_file', filename=entry.filename) }}"
