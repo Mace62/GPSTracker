@@ -2,9 +2,8 @@
 
 {% block content %}
 
-<h1>Cancel Subscription</h1>
-<h6>Are you sure you want to stop paying?</h6>
-<h6>Doing this will disable your account unless you decide to start paying</h6>
+<h1 style="text-align: center;">Cancel Subscription</h1>
+<p style="text-align: center;">Are you sure you wish to unsubscribe from TerraTracker? You can resubscribe anytime by using your login details</p>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <form action="" method="POST" role="form" name="Verify Login">
     {{ form.hidden_tag() }}
@@ -15,6 +14,7 @@
             <span style="color: red;">{{ error }}</span><br>
         {% endfor %}
     </div>
+    <br>
     <div class="form-group text-center">
         {{ form.submit(class="btn btn-danger submit-button") }}
     </div>

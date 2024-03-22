@@ -92,8 +92,8 @@
 ></iframe>
 
 <div id="stats">
-  <h2>Track Stats</h2>
   {% if stats %}
+  <h2>Track Stats</h2>
   <table>
     {% for stat_name, stat_value in stats.items() %}
     <tr>
@@ -102,32 +102,8 @@
     </tr>
     {% endfor %}
   </table>
-  {% else %}
-  <div
-    style="
-      border: 2px solid rgb(178, 0, 0);
-      padding: 10px;
-      margin: 5px;
-      text-align: center;
-      background-color: #000000;
-      border-radius: 10px;
-    "
-  >
-    <p
-      style="
-        color: red;
-        font-family: Jura;
-        font-size: 32px;
-        font-weight: bolder;
-      "
-    >
-      NO STATS AVAILABLE UPLOAD FILE WITH TRACK POINTS TO VIEW STATS
-    </p>
-  </div>
-  {% endif %}
-</div>
 
-<h3>ELEVATION CHARTS</h3>
+  <h3>ELEVATION CHARTS</h3>
 <div
   id="elevation-charts"
   style="display: flex; flex-direction: column; margin-top: 10px"
@@ -173,6 +149,12 @@
   </div>
   {% endfor %}
 </div>
+  {% else %}
+  <h2>No stats available for this track. Upload another file to get track points.</h2>
+  {% endif %}
+</div>
+
+
 
 <script>
   document.getElementById("loading").style.display = "block";

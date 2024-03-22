@@ -2,19 +2,21 @@
 
 {% block content %}
 
-<h2>Select a Group</h2>
+<h1 style="text-align: center;">GROUPS</h1>
+{% if num_groups > 0 %}
 <form id="group-selection-form">
     {{ selection_form.hidden_tag() }}
-    <div class="form-group">
+    <div class="form-group" style="text-align: center;">
         {{ selection_form.group.label }}
         {{ selection_form.group(class="form-control") }}
     </div>
 </form>
+{% endif %}
 
-
+<br>
 <form method="post">
     {{ creation_form.hidden_tag() }}
-    <div class="form-group">
+    <div class="form-group" style="text-align: center;">
         <label for="group_name">Group Name</label>
         {{ creation_form.group_name(class="form-control") }}
         {% if creation_form.group_name.errors %}
@@ -25,7 +27,7 @@
     </div>
 
     <div id="friends-cards" class="mt-3">
-        <h4>Select Friends:</h4>
+        <h2>Select Friends:</h2>
         {% for friend_id, friend_name in friends_choices %}
         <div class="friend-card" data-id="{{ friend_id }}">
             {{ friend_name }}
@@ -37,7 +39,9 @@
     {{ creation_form.selected_friends }}
 
     <!-- Submit button -->
-    <button type="submit" class="btn btn-primary mt-3">Create Group</button>
+    <div style="text-align: center;">
+    <button type="submit" class="btn btn-lg btn-block">Create Group</button>
+    </div>
 </form>
 <script>document.getElementById('{{ selection_form.group.id }}').onchange = function() {
     var groupId = this.value;

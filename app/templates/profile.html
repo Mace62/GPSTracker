@@ -5,10 +5,13 @@
 
 {% block content %}
 
-<h1>This is the profile page.</h1>
-<p><em>You are currently on a {{ subscription_type }} subscription.</em></p>
-<a href="{{ url_for('change_subscription') }}" class="btn btn-primary">Change Subscription</a>
-<a href="{{ url_for('cancel_subscription') }}" class="btn btn-danger">Cancel Subscription</a>
+<h1 style="text-align: center;">PROFILE</h1>
+<p style="text-align: center;"><em>You are currently on a <b>{{ subscription_type }}</b> subscription.</em></p>
+<!-- Move the buttons to the center -->
+<div style="text-align: center;">
+  <a href="{{ url_for('change_subscription') }}" class="btn">Change Subscription</a>
+  <a href="{{ url_for('cancel_subscription') }}" class="btn btn-danger">Cancel Subscription</a>
+</div>
 
 
 
@@ -17,7 +20,7 @@
     <!-- Left Column: Friend Requests and My Friends -->
     <div class="col-md-6">
       <div class="sidebar">
-        <h3>Friend Requests</h3>
+        <h2>Friend Requests</h2>
         <!-- Friend Requests Content -->
         {% if received_requests %}
           {% for request in received_requests %}
@@ -53,20 +56,21 @@
         {% for friend in friends %}
         <div class="mb-4">
           <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
               <small class="text-muted">
                 {{ friend.username }}
               </small>
               <form action="{{ url_for('remove_friend', friend_id=friend.id) }}" method="post" class="d-inline">
                 {{ form.csrf_token }}
-                <button type="submit" class="btn btn-danger">Remove Friend</button>
+                <button type="submit" class="btn btn-danger float-end">Remove Friend</button>
               </form>
             </div>
           </div>
         </div>
+        
         {% endfor %}
         {% else %}
-        <p>Add some friends by looking them up :) </p>
+        <p>Search for friends to add by typing their username into the search bar!</p>
          {% endif %}
       </div>
     </div>
@@ -76,7 +80,8 @@
       <div class="main-content">
         <!-- Search Form -->
         <form action="{{ url_for('profile') }}" method="get">
-          <input type="text" name="q" placeholder="Search users..." class="form-control">
+          <label for="search" class="visually-hidden">Search users</label>
+          <input type="text" id="search" name="q" placeholder="Search users..." class="form-control">
           <button type="submit" class="btn btn-primary mt-2">Search</button>
         </form>
 
@@ -113,12 +118,12 @@
                 {% elif follow_status[user.id].status == 'accepted' %}
                     <form action="{{ url_for('remove_friend', friend_id=user.id) }}" method="post">
                         {{ form.csrf_token }}
-                        <button type="submit" class="btn btn-success">Friend</button>
+                        <button type="submit" class="btn btn-danger">Remove Friend</button>
                     </form>
                 {% else %}
                     <form action="{{ url_for('send_friend_request', username=user.username) }}" method="post">
                         {{ form.csrf_token }}
-                        <button type="submit" class="btn btn-primary" >Add friend</button>
+                        <button type="submit" class="btn btn-primary">Add friend</button>
                       </form>
                 {% endif %}
             </div>

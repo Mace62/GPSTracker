@@ -699,7 +699,6 @@ class TestUserHasNotLoggedIn(TestCase):
             for rule in app.url_map.iter_rules():
                 # Ignoring blacklisted URL's
                 if rule.rule not in login_redirects_not_to_test:
-                    print(rule.rule)
                     
                     response = c.get(rule.rule)
                     # Check if the redirect location is the login page
@@ -715,9 +714,6 @@ class TestUserHasNotLoggedIn(TestCase):
                     else:
                         # If there is no question mark, use the URL as it is
                         url_before_question_mark = url
-
-                    print(url_before_question_mark)
-                    print(expected_redirect_location)
 
                     self.assertTrue(response.status_code in [301, 302, 303, 305, 307])
                     self.assertEqual(url_before_question_mark, expected_redirect_location)
