@@ -644,10 +644,8 @@ def share(filename):
                 db.session.add(new_share)
                 db.session.commit()
                 flash('File shared successfully.', 'success')
-                print("SHARED")
             else:
                 flash('File already shared with selected group.', 'error')
-                print("ALR SHARED")
             return redirect(url_for('list_user_files'))
         else:
             flash('Invalid group selected.', 'error')
@@ -669,7 +667,6 @@ def add(filename):
     
     if selection_form.validate_on_submit():
         selected_group_id = selection_form.pmg.data
-        print("SELECTED ID: ", selected_group_id)
         selected_group = models.Group.query.get(selected_group_id)
         if selected_group:
             gpx_file = models.GPXFileData.query.filter_by(filename=filename).first()
@@ -725,7 +722,7 @@ def group(group_id):
                 'A group with this name already exists within your selected group of friends.', 'error')
         else:
             # If the name is unique, proceed with group creation
-            new_pmg = group()
+            new_group = create_group(group_user_ids, group_name)
             flash('Group created successfully.', 'success')
             return redirect(url_for('group'))  # Redirect as appropriate
 
@@ -1211,7 +1208,6 @@ def viewgroup(group_id):
     group_name = models.Group.query.get(group_id).name
     is_pmg = False
     is_pmg = models.PMG.query.filter_by(user_id=current_user.id, group_id=group_id).first() is not None
-    print (is_pmg)
     return render_template('view_group_map.html', map_url=map_url, group_name=group_name, group_id=group_id, is_pmg = is_pmg)
 
 @app.route('/download/<filename>')
