@@ -1,67 +1,90 @@
-{% extends "base.html" %}
-
-{% block content %}
-
-<h2>Select a Group</h2>
-<form id="group-selection-form">
-    {{ selection_form.hidden_tag() }}
-    <div class="form-group">
-        {{ selection_form.group.label }}
-        {{ selection_form.group(class="form-control") }}
-    </div>
-</form>
-
-
-<form method="post">
-    {{ creation_form.hidden_tag() }}
-    <div class="form-group">
-        <label for="group_name">Group Name</label>
-        {{ creation_form.group_name(class="form-control") }}
-        {% if creation_form.group_name.errors %}
-            {% for error in creation_form.group_name.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        {% endif %}
-    </div>
-
-    <div id="friends-cards" class="mt-3">
-        <h4>Select Friends:</h4>
-        {% for friend_id, friend_name in friends_choices %}
-        <div class="friend-card" data-id="{{ friend_id }}">
-            {{ friend_name }}
+{% extends "base.html" %} {% block content %}
+<div class="container">
+  <div class="row">
+    <!-- Select a Group Card -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h2>Select a Group To View</h2>
+          <form id="group-selection-form">
+            {{ selection_form.hidden_tag() }}
+            <div class="form-group">
+              {{ selection_form.group.label }} {{
+              selection_form.group(class="form-control") }}
+            </div>
+          </form>
         </div>
-        {% endfor %}
+      </div>
     </div>
 
-    <!-- Hidden field to store selected friend IDs -->
-    {{ creation_form.selected_friends }}
+    <!-- Create Group Card -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h2>Create a Group</h2>
+          <form method="post">
+            {{ creation_form.hidden_tag() }}
+            <div class="form-group">
+              <label for="group_name">Group Name</label>
+              {{ creation_form.group_name(class="form-control") }} {% if
+              creation_form.group_name.errors %} {% for error in
+              creation_form.group_name.errors %}
+              <span style="color: red">{{ error }}</span>
+              {% endfor %} {% endif %}
+            </div>
 
-    <!-- Submit button -->
-    <button type="submit" class="btn btn-primary mt-3">Create Group</button>
-</form>
-<script>document.getElementById('{{ selection_form.group.id }}').onchange = function() {
-    var groupId = this.value;
-    // Check if the placeholder value (e.g., '') is selected
-    if(groupId === '') {
+            <div id="friends-cards" class="mt-3">
+              <h4>Select Friends:</h4>
+              {% for friend_id, friend_name in friends_choices %}
+              <div class="friend-card" data-id="{{ friend_id }}">
+                {{ friend_name }}
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Hidden field to store selected friend IDs -->
+            {{ creation_form.selected_friends }}
+
+            <!-- Submit button -->
+            <button type="submit" class="btn btn-primary mt-3">
+              Create Group
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById("{{ selection_form.group.id }}").onchange =
+    function () {
+      var groupId = this.value;
+      // Check if the placeholder value (e.g., '') is selected
+      if (groupId === "") {
         // Redirect to the base /group URL
-        window.location.href = '/group';
-    } else if(groupId) {
+        window.location.href = "/group";
+      } else if (groupId) {
         // Redirect to the specific group's page
-        window.location.href = '/group/' + groupId;
-    }
-};
+        window.location.href = "/viewgroup/" + groupId;
+      }
+    };
 
-    document.querySelectorAll('.friend-card').forEach(card => {
-        card.addEventListener('click', function() {
-            this.classList.toggle('selected'); // Toggle 'selected' class on click
-            updateSelectedFriends(); // Update the hidden input with selected friend IDs
-        });
+  document.querySelectorAll(".friend-card").forEach((card) => {
+    card.addEventListener("click", function () {
+      this.classList.toggle("selected"); // Toggle 'selected' class on click
+      updateSelectedFriends(); // Update the hidden input with selected friend IDs
     });
+  });
 
-    function updateSelectedFriends() {
-        // Collect IDs of all selected friends
-        const selectedIds = Array.from(document.querySelectorAll('.friend-card.selected')).map(card => card.dataset.id);
-        // Update the hidden input value
-        document.querySelector('input[name="selected_friends"]').value = selectedIds.join(',');}
-    </script>
+  function updateSelectedFriends() {
+    // Collect IDs of all selected friends
+    const selectedIds = Array.from(
+      document.querySelectorAll(".friend-card.selected")
+    ).map((card) => card.dataset.id);
+    // Update the hidden input value
+    document.querySelector('input[name="selected_friends"]').value =
+      selectedIds.join(",");
+  }
+</script>
 {% endblock %}
