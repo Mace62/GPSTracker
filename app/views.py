@@ -43,6 +43,12 @@ def load_user(user_id):
 
 @app.route('/')
 def landing():
+    if current_user.is_authenticated:
+        user = models.User.query.filter_by(username = session.get('username')).first()
+        admin = models.Admin.query.filter_by(user_id = user.id).first()
+        if admin:
+            return redirect(url_for('admin'))
+        return redirect(url_for('homepage'))
     return render_template('landing.html')
 
 @app.route('/homepage')
@@ -66,6 +72,7 @@ def homepage():
 
 
     subscriptions = models.Subscriptions.query.all()
+    num_subs = models.Subscriptions.query.count()
     # Loops to refresh the time to pay
     if subscriptions:
         for subscription in subscriptions:
@@ -77,7 +84,7 @@ def homepage():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
-    return render_template('homepage.html')
+    return render_template('homepage.html', username=username, num_subs=num_subs, title='Home')
 
 
 # Need a page to land on to select what the user wants to pay
@@ -97,7 +104,7 @@ def select_payment():
         session['payment_option'] = payment_option
         return redirect(url_for('payment'))  # Redirect to the payment route
 
-    return render_template("/select_payment.html", form=form)
+    return render_template("/select_payment.html", form=form, title="Select Payment")
 
 
 
@@ -114,7 +121,7 @@ def change_subscription():
         # Redirect to the payment route
         return redirect(url_for('new_subscription'))
 
-    return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form)
+    return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form, title="Change Subscription")
 
 @app.route('/cancel_subscription', methods=['GET', 'POST'])
 @login_required
@@ -320,7 +327,7 @@ def login_new_user():
 def logout():
     logout_user()
     flash('You have been logged out.')
-    return redirect(url_for('login'))
+    return redirect(url_for('landing'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -332,16 +339,16 @@ def register():
             if models.User.query.filter_by(
                     username=form.username.data).first():
                 flash("Username exists, try a different name.")
-                return render_template('register.html', form=form)
+                return render_template('register.html', form=form, title="Register")
 
             if models.User.query.filter_by(
                     email=form.email.data).first():
                 flash("Email exists, try a different email.")
-                return render_template('register.html', form=form)
+                return render_template('register.html', form=form, title="Register")
 
             if form.password.data != form.confirm.data:
                 flash("Passwords do not match.")
-                return render_template('register.html', form=form)
+                return render_template('register.html', form=form, title="Register")
 
             # hash password
             hashed_password = bcrypt.generate_password_hash(form.password.data)
@@ -352,7 +359,7 @@ def register():
                 'lastname': form.last_name.data,
                 'email': form.email.data
             }
-            return render_template('select_payment.html', form=PaymentForm())
+            return render_template('select_payment.html', form=PaymentForm(), title="Select Payment")
         except Exception as e:
             flash(f"Error: {e}")
     else:
@@ -360,11 +367,10 @@ def register():
             for error in errors:
                 flash(error)
 
-    return render_template('register.html', form=form)
+    return render_template('register.html', form=form, title="Register")
 
 def create_admin():
     if models.User.query.count() == 0:
-        print("NO USERS")
         new_admin = models.User(username="admin", password=bcrypt.generate_password_hash(
             "Admin123!"), firstname="admin", lastname="admin", email="admin@admin.com")
         db.session.add(new_admin)
@@ -404,7 +410,14 @@ def login():
 @app.route('/admin')
 @login_required
 def admin():
-    return render_template('admin.html')
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('homepage'))
+    num_users = models.Subscriptions.query.count()
+    future_revenue_data = calculate_future_revenue()
+
+    total_revenue = round(sum(future_revenue_data), 2)
+    return render_template('admin.html', num_users=num_users, total_revenue=total_revenue, title='Administration')
 
 
 def get_friends_choices(user_id):
@@ -428,7 +441,8 @@ def perform_user_search(query, current_user):
     if query:
         results = models.User.query.filter(
             models.User.username.ilike(f'%{query}%'),
-            models.User.id != current_user.id
+            models.User.id != current_user.id,
+            models.User.username != 'admin'
         ).all()
 
         for user in results:
@@ -481,7 +495,7 @@ def profile():
         results, follow_status = perform_user_search(query, current_user)
         # Update follow_status for each user based on friendship
 
-    return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends,subscription_type=subscription_type)
+    return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends,subscription_type=subscription_type, title='Profile')
 
 
 @app.route('/send_friend_request/<username>', methods=['POST'])
@@ -655,6 +669,9 @@ def group(group_id):
     selection_form.group.choices = [
         ('', '--- Select a Group ---')] + [(g.id, g.name) for g in groups]
 
+    num_groups = models.GroupMember.query.filter_by(
+        user_id=current_user.id).count()
+
     if creation_form.validate_on_submit():
         # Parse the form data to get selected friend IDs and include the current user's ID
         group_user_ids = request.form.get('selected_friends').split(',')
@@ -697,11 +714,7 @@ def group(group_id):
     else:
         display_group_name = '-- Select a Group --'
 
-    return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name)
-    if not models.Admin.query.filter_by(user_id=current_user.id).first():
-        flash('You are not an admin!')
-        return redirect(url_for('homepage'))
-    return render_template('admin.html')
+    return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name, num_groups=num_groups, title='Groups')
 
 
 @app.route('/all_users')
@@ -724,21 +737,10 @@ def all_users():
     user_subscriptions = models.Subscriptions.query.filter(
         models.Subscriptions.user_id.in_(user_ids)).all()
 
-    return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions)
+    return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions, title='All Users')
 
 
-@app.route('/future_revenue', methods=['GET', 'POST'])
-@login_required
-def future_revenue():
-    if not models.Admin.query.filter_by(user_id=current_user.id).first():
-        flash('You are not an admin!')
-        return redirect(url_for('homepage'))
-
-    # Initialize graph data
-    graph_data = {
-        'labels': [],
-        'data': []
-    }
+def calculate_future_revenue():
     data = [0] * 53
 
     # Reset current date to original value
@@ -746,11 +748,6 @@ def future_revenue():
 
     # Calculate the end date for the next year
     end_date = current_date + timedelta(days=365)
-
-    # Generate labels for weeks 1 to 52
-    for week_number in range(1, 53):
-        week_label = f"Week {week_number}"
-        graph_data['labels'].append(week_label)
 
     # Iterate through subscriptions
     for subscription in models.Subscriptions.query.all():
@@ -772,9 +769,31 @@ def future_revenue():
                 data[i] += 6.99
         else:
             data[weeks_away] += 79.99
+        
+    return data
 
-    graph_data['data'] = data
-    return render_template('future_revenue.html', graph_data=graph_data)
+@app.route('/future_revenue', methods=['GET', 'POST'])
+@login_required
+def future_revenue():
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('homepage'))
+
+    # Initialize graph data
+    graph_data = {
+        'labels': [],
+        'data': []
+    }
+
+
+    # Generate labels for weeks 1 to 52
+    for week_number in range(1, 53):
+        week_label = f"Week {week_number}"
+        graph_data['labels'].append(week_label)
+
+    graph_data['data'] = calculate_future_revenue()
+
+    return render_template('future_revenue.html', graph_data=graph_data, title='Future Revenue')
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -811,7 +830,7 @@ def upload_file():
             for error in errors:
                 flash(error, 'danger')
 
-    return render_template('upload.html', form=form)
+    return render_template('upload.html', form=form, title='Upload File')
 
 
 @app.route('/myfiles')
@@ -824,7 +843,7 @@ def list_user_files():
     files = os.listdir(user_folder)
     file_entries = models.GPXFileData.query.filter_by(
         user_id=current_user.id).all()
-    return render_template('list_files.html', files=files, file_entries=file_entries)
+    return render_template('list_files.html', files=files, file_entries=file_entries, title='My Journeys')
 
 
 @app.route('/generate_map/<filename>')
@@ -1081,7 +1100,7 @@ def view(filename):
         app.root_path, 'static', 'uploads', str(current_user.id))
     map_file = f'{filename}_map.html'
     map_url = url_for('serve_map', filename=map_file)
-    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats, elevation_data=elevation_data)
+    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats, elevation_data=elevation_data, title='View Map')
 
 @app.route('/viewgroup/<group_id>')
 @login_required

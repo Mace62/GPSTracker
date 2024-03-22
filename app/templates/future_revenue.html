@@ -1,6 +1,8 @@
 {% extends "admin_base.html" %}
 {% block content %}
-    <h1>Future Revenue</h1>
+    <h1 style="text-align: center;">Future Revenue</h1>
+    <p style="text-align: center;">Displayed on a weekly basis</p>
+    <br>
     <body>
         <canvas id="myChart"></canvas>
 
@@ -12,11 +14,11 @@
                 data: {
                     labels: graphData.labels,
                     datasets: [{
-                        label: 'Sample Data',
+                        label: 'Weekly Revenue (£)',
                         data: graphData.data,
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
+                        backgroundColor: 'rgba(250, 250,250, 1)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2
                     }]
                 },
                 options: {

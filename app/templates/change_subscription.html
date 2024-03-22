@@ -2,27 +2,26 @@
 
 {% block content %}
 
-
-
-<!-- HTML side. Has 3 buttons to select payment options from -->
-<!-- Has not been formatted to correct spec -->
 <title>Select Payment Option</title>
 <body>
-    <h2>Select your new payment tariff from the options listed below</h2>
-        <h6>Note that your membership will renew automatically on this date: {{ next_payment_date }}</h6>
-        <p><em>Changing your membership will combine the new subscription with remaining time left on the current subscription.</em></p>
+    <h1 style="text-align: center;">CHANGE SUBSCRIPTION</h1>
+    <h2 style="text-align: center;">Select your new payment tariff from the options listed below</h2>
+        <p style="text-align: center;">Note that your membership will renew automatically on this date: <b>{{ next_payment_date }}</b></h6>
+        <p style="text-align: center;"><em>Changing your membership will combine the new subscription with remaining time left on the current subscription.</em></p>
         <meta name="csrf-token" content="{{ csrf_token() }}">
-            <form id="PaymentForm" action="/change_subscription" method="post" role="form" name="payment_option">
+            <form id="PaymentForm" action="/change_subscription" method="post" role="form" name="payment_option" style="text-align: center;">
                 {{ form.hidden_tag() }}
                 <input type="hidden" id="payment_option" name="payment_option">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {{ form.csrf }}
                 <div class="form-group">
-                    <button id="weekly" type="submit" class="btn btn-block btn-success submit-button">Weekly Subscription £1.99</button>
+                    <button id="weekly" type="submit" class="btn btn-lg btn-block btn-success submit-button">Weekly Subscription £1.99</button>
                     <br>
-                    <button id="monthly" type="submit" class="btn btn-block btn-success submit-button">Monthly Subscription £6.99</button>
                     <br>
-                    <button id="yearly" type="submit" class="btn btn-block btn-success submit-button">Yearly Subscription £79.99</button>
+                    <button id="monthly" type="submit" class="btn btn-lg btn-block btn-success submit-button">Monthly Subscription £6.99</button>
+                    <br>
+                    <br>
+                    <button id="yearly" type="submit" class="btn btn-lg btn-block btn-success submit-button">Yearly Subscription £79.99</button>
                 </div>
                 
             </form>
