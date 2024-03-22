@@ -371,7 +371,6 @@ def register():
 
 def create_admin():
     if models.User.query.count() == 0:
-        print("NO USERS")
         new_admin = models.User(username="admin", password=bcrypt.generate_password_hash(
             "Admin123!"), firstname="admin", lastname="admin", email="admin@admin.com")
         db.session.add(new_admin)
