@@ -66,3 +66,6 @@ class VerifyLoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Disable Account')
 
+class ShareSelectionForm(FlaskForm):
+    group = SelectField('Select a Group', validate_choice=False)
+    submit = SubmitField('Share')

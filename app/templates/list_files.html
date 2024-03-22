@@ -1,34 +1,45 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block content %}
 
-{% block content %}
-
-    <h1 style="text-align: center;">MY JOURNEYS</h1>
-    {% if file_entries %}
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Filename</th>
-                        <th>Upload Time</th>
-                        <th>Download</th>
-                        <th>Delete</th>
-                        <th>View</th> <!-- Added new column for "View" -->
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in file_entries %}
-                        <tr>
-                            <td>{{ entry.filename }}</td>
-                            <td>{{ entry.upload_time.strftime('%d/%m/%Y %H:%M') }}</td>
-                            <td><a href="{{ url_for('download_file', filename=entry.filename) }}">Download</a></td>
-                            <td><a href="{{ url_for('delete_file', filename=entry.filename) }}">Delete</a></td>
-                            <td><a href="{{ url_for('view', filename=entry.filename) }}">View</a></td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p>You have no files uploaded.</p>
-    {% endif %}
-{% endblock %}
+<h1 style="text-align: center">MY JOURNEYS</h1>
+{% if file_entries %}
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Filename</th>
+        <th>Upload Time</th>
+        <th>Download</th>
+        <th>View</th>
+        <th>Share</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in file_entries %}
+      <tr>
+        <td>{{ entry.filename }}</td>
+        <td>{{ entry.upload_time.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td>
+          <a href="{{ url_for('download_file', filename=entry.filename) }}"
+            >Download</a
+          >
+        </td>
+        <td>
+          <a href="{{ url_for('view', filename=entry.filename) }}">View</a>
+        </td>
+        <td>
+          <a href="{{ url_for('share', filename=entry.filename) }}"> Share</a>
+        </td>
+        <td>
+          <a href="{{ url_for('delete_file', filename=entry.filename) }}"
+            >Delete</a
+          >
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p>You have no files uploaded.</p>
+{% endif %} {% endblock %}

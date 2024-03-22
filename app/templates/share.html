@@ -1,0 +1,52 @@
+{% extends "base.html" %} {% block content %}
+
+<style>
+  .card-title {
+    font-family: "Jura", sans-serif;
+    font-weight: bold;
+    text-align: center;
+    color: #000000;
+  }
+  .card {
+    width: 50%;
+    margin: 0 auto;
+    margin-top: 30px;
+    padding: 20px;
+    border: 1px solid #bdb1a0;
+    border-radius: 10px;
+    background-color: #bdb1a0;
+    font-family: Jura;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .submit-button {
+    width: auto;
+    height: auto;
+    font-family: Jura;
+    font-size: 50px;
+    background-color: green;
+    border-color: #000000;
+    color: white;
+  }
+</style>
+
+<h2>Share File: {{ filename }}</h2>
+<form action="{{ url_for('share', filename=filename) }}" method="post">
+  {{ selection_form.hidden_tag() }}
+  <div>
+    <label for="group">Select a Group:</label>
+    <select name="group" id="group">
+      {% for group_id, group_name in selection_form.group.choices %}
+      <option value="{{ group_id }}">{{ group_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <input type="submit" value="Share" />
+  </div>
+</form>
+
+{% endblock %}

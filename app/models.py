@@ -80,7 +80,12 @@ class GPXTrackPoint(db.Model):
     time = db.Column(db.DateTime)
     track_id = db.Column(db.Integer, db.ForeignKey('gpxtrack.id'))
 
-## Classes for GPX parsing ##
+class SharedGPXFile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    file_id = db.Column(db.Integer, db.ForeignKey('gpxfiledata.id'), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    
+    ## Classes for GPX parsing ##
 class GPXFile:
     def __init__(self, name, filepath):
         self.name = name
