@@ -5,10 +5,13 @@
 
 {% block content %}
 
-<h1>This is the profile page.</h1>
-<p><em>You are currently on a {{ subscription_type }} subscription.</em></p>
-<a href="{{ url_for('change_subscription') }}" class="btn btn-primary">Change Subscription</a>
-<a href="{{ url_for('cancel_subscription') }}" class="btn btn-danger">Cancel Subscription</a>
+<h1 style="text-align: center;">PROFILE</h1>
+<p style="text-align: center;"><em>You are currently on a <b>{{ subscription_type }}</b> subscription.</em></p>
+<!-- Move the buttons to the center -->
+<div style="text-align: center;">
+  <a href="{{ url_for('change_subscription') }}" class="btn">Change Subscription</a>
+  <a href="{{ url_for('cancel_subscription') }}" class="btn btn-danger">Cancel Subscription</a>
+</div>
 
 
 
@@ -17,7 +20,7 @@
     <!-- Left Column: Friend Requests and My Friends -->
     <div class="col-md-6">
       <div class="sidebar">
-        <h3>Friend Requests</h3>
+        <h2>Friend Requests</h2>
         <!-- Friend Requests Content -->
         {% if received_requests %}
           {% for request in received_requests %}
@@ -76,7 +79,8 @@
       <div class="main-content">
         <!-- Search Form -->
         <form action="{{ url_for('profile') }}" method="get">
-          <input type="text" name="q" placeholder="Search users..." class="form-control">
+          <label for="search" class="visually-hidden">Search users</label>
+          <input type="text" id="search" name="q" placeholder="Search users..." class="form-control">
           <button type="submit" class="btn btn-primary mt-2">Search</button>
         </form>
 

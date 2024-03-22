@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<h2>Select a Group</h2>
+<h1 style="text-align: center;">Select a Group</h1>
 <form id="group-selection-form">
     {{ selection_form.hidden_tag() }}
     <div class="form-group">
@@ -37,7 +37,7 @@
     {{ creation_form.selected_friends }}
 
     <!-- Submit button -->
-    <button type="submit" class="btn btn-primary mt-3">Create Group</button>
+    <button type="submit" class="btn" style="text-align: center;">Create Group</button>
 </form>
 <script>document.getElementById('{{ selection_form.group.id }}').onchange = function() {
     var groupId = this.value;

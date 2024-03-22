@@ -83,7 +83,7 @@ def homepage():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
-    return render_template('homepage.html')
+    return render_template('homepage.html', title='Home')
 
 
 # Need a page to land on to select what the user wants to pay
@@ -103,7 +103,7 @@ def select_payment():
         session['payment_option'] = payment_option
         return redirect(url_for('payment'))  # Redirect to the payment route
 
-    return render_template("/select_payment.html", form=form)
+    return render_template("/select_payment.html", form=form, title="Select Payment")
 
 
 
@@ -120,7 +120,7 @@ def change_subscription():
         # Redirect to the payment route
         return redirect(url_for('new_subscription'))
 
-    return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form)
+    return render_template('change_subscription.html', next_payment_date=next_payment_date, form=form, title="Change Subscription")
 
 @app.route('/cancel_subscription', methods=['GET', 'POST'])
 @login_required
@@ -338,16 +338,16 @@ def register():
             if models.User.query.filter_by(
                     username=form.username.data).first():
                 flash("Username exists, try a different name.")
-                return render_template('register.html', form=form)
+                return render_template('register.html', form=form, title="Register")
 
             if models.User.query.filter_by(
                     email=form.email.data).first():
                 flash("Email exists, try a different email.")
-                return render_template('register.html', form=form)
+                return render_template('register.html', form=form, title="Register")
 
             if form.password.data != form.confirm.data:
                 flash("Passwords do not match.")
-                return render_template('register.html', form=form)
+                return render_template('register.html', form=form, title="Register")
 
             # hash password
             hashed_password = bcrypt.generate_password_hash(form.password.data)
@@ -358,7 +358,7 @@ def register():
                 'lastname': form.last_name.data,
                 'email': form.email.data
             }
-            return render_template('select_payment.html', form=PaymentForm())
+            return render_template('select_payment.html', form=PaymentForm(), title="Select Payment")
         except Exception as e:
             flash(f"Error: {e}")
     else:
@@ -366,7 +366,7 @@ def register():
             for error in errors:
                 flash(error)
 
-    return render_template('register.html', form=form)
+    return render_template('register.html', form=form, title="Register")
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -406,7 +406,7 @@ def login():
 @app.route('/admin')
 @login_required
 def admin():
-    return render_template('admin.html')
+    return render_template('admin.html', title='Administration')
 
 
 def get_friends_choices(user_id):
@@ -484,7 +484,7 @@ def profile():
         results, follow_status = perform_user_search(query, current_user)
         # Update follow_status for each user based on friendship
 
-    return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends,subscription_type=subscription_type)
+    return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends,subscription_type=subscription_type, title='Profile')
 
 
 @app.route('/send_friend_request/<username>', methods=['POST'])
@@ -668,11 +668,7 @@ def group(group_id):
     else:
         display_group_name = '-- Select a Group --'
 
-    return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name)
-    if not models.Admin.query.filter_by(user_id=current_user.id).first():
-        flash('You are not an admin!')
-        return redirect(url_for('homepage'))
-    return render_template('admin.html')
+    return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name, title='Groups')
 
 
 @app.route('/all_users')
@@ -695,7 +691,7 @@ def all_users():
     user_subscriptions = models.Subscriptions.query.filter(
         models.Subscriptions.user_id.in_(user_ids)).all()
 
-    return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions)
+    return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions, title='All Users')
 
 
 @app.route('/future_revenue', methods=['GET', 'POST'])
@@ -745,7 +741,7 @@ def future_revenue():
             data[weeks_away] += 79.99
 
     graph_data['data'] = data
-    return render_template('future_revenue.html', graph_data=graph_data)
+    return render_template('future_revenue.html', graph_data=graph_data, title='Future Revenue')
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -782,7 +778,7 @@ def upload_file():
             for error in errors:
                 flash(error, 'danger')
 
-    return render_template('upload.html', form=form)
+    return render_template('upload.html', form=form, title='Upload File')
 
 
 @app.route('/myfiles')
@@ -795,7 +791,7 @@ def list_user_files():
     files = os.listdir(user_folder)
     file_entries = models.GPXFileData.query.filter_by(
         user_id=current_user.id).all()
-    return render_template('list_files.html', files=files, file_entries=file_entries)
+    return render_template('list_files.html', files=files, file_entries=file_entries, title='My Journeys')
 
 
 @app.route('/generate_map/<filename>')
@@ -949,7 +945,7 @@ def view(filename):
         app.root_path, 'static', 'uploads', str(current_user.id))
     map_file = f'{filename}_map.html'
     map_url = url_for('serve_map', filename=map_file)
-    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats, elevation_data=elevation_data)
+    return render_template('view_map.html', map_url=map_url, filename=filename, stats = stats, elevation_data=elevation_data, title='View Map')
 
 
 @app.route('/download/<filename>')
