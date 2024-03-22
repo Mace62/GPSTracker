@@ -11,3 +11,4 @@ migrations
 **/uploads
 .vscode/settings.json
 app/static/group
+**/*.pyc
