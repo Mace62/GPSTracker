@@ -179,12 +179,15 @@
     display: inline-block; /* Display cards horizontally */
     margin: 10px;
     padding: 10px;
-    border: 1px solid #ccc;
+    color: white;
+    background-color: #132b2c;
+    border: 2px solid black;
     cursor: pointer;
 }
 
 .friend-card.selected {
-    border-color: blue; /* Highlight selected cards */
+    /* color: white; */
+    background-color: #8B0000;
 }
 
 

@@ -72,6 +72,7 @@ def homepage():
 
 
     subscriptions = models.Subscriptions.query.all()
+    num_subs = models.Subscriptions.query.count()
     # Loops to refresh the time to pay
     if subscriptions:
         for subscription in subscriptions:
@@ -83,7 +84,7 @@ def homepage():
                 else:
                     subscription.payment_date += timedelta(days=365)
                 db.session.commit()
-    return render_template('homepage.html', title='Home')
+    return render_template('homepage.html', username=username, num_subs=num_subs, title='Home')
 
 
 # Need a page to land on to select what the user wants to pay
@@ -406,7 +407,14 @@ def login():
 @app.route('/admin')
 @login_required
 def admin():
-    return render_template('admin.html', title='Administration')
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('homepage'))
+    num_users = models.Subscriptions.query.count()
+    future_revenue_data = calculate_future_revenue()
+
+    total_revenue = round(sum(future_revenue_data), 2)
+    return render_template('admin.html', num_users=num_users, total_revenue=total_revenue, title='Administration')
 
 
 def get_friends_choices(user_id):
@@ -626,6 +634,9 @@ def group(group_id):
     selection_form.group.choices = [
         ('', '--- Select a Group ---')] + [(g.id, g.name) for g in groups]
 
+    num_groups = models.GroupMember.query.filter_by(
+        user_id=current_user.id).count()
+
     if creation_form.validate_on_submit():
         # Parse the form data to get selected friend IDs and include the current user's ID
         group_user_ids = request.form.get('selected_friends').split(',')
@@ -668,7 +679,7 @@ def group(group_id):
     else:
         display_group_name = '-- Select a Group --'
 
-    return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name, title='Groups')
+    return render_template('group.html', creation_form=creation_form, groups=groups, friends_choices=friends_choices, selection_form=selection_form, display_group_name=display_group_name, num_groups=num_groups, title='Groups')
 
 
 @app.route('/all_users')
@@ -694,18 +705,7 @@ def all_users():
     return render_template('all_users.html', users=non_admin_users, subscriptions=user_subscriptions, title='All Users')
 
 
-@app.route('/future_revenue', methods=['GET', 'POST'])
-@login_required
-def future_revenue():
-    if not models.Admin.query.filter_by(user_id=current_user.id).first():
-        flash('You are not an admin!')
-        return redirect(url_for('homepage'))
-
-    # Initialize graph data
-    graph_data = {
-        'labels': [],
-        'data': []
-    }
+def calculate_future_revenue():
     data = [0] * 53
 
     # Reset current date to original value
@@ -713,11 +713,6 @@ def future_revenue():
 
     # Calculate the end date for the next year
     end_date = current_date + timedelta(days=365)
-
-    # Generate labels for weeks 1 to 52
-    for week_number in range(1, 53):
-        week_label = f"Week {week_number}"
-        graph_data['labels'].append(week_label)
 
     # Iterate through subscriptions
     for subscription in models.Subscriptions.query.all():
@@ -739,8 +734,30 @@ def future_revenue():
                 data[i] += 6.99
         else:
             data[weeks_away] += 79.99
+        
+    return data
 
-    graph_data['data'] = data
+@app.route('/future_revenue', methods=['GET', 'POST'])
+@login_required
+def future_revenue():
+    if not models.Admin.query.filter_by(user_id=current_user.id).first():
+        flash('You are not an admin!')
+        return redirect(url_for('homepage'))
+
+    # Initialize graph data
+    graph_data = {
+        'labels': [],
+        'data': []
+    }
+
+
+    # Generate labels for weeks 1 to 52
+    for week_number in range(1, 53):
+        week_label = f"Week {week_number}"
+        graph_data['labels'].append(week_label)
+
+    graph_data['data'] = calculate_future_revenue()
+
     return render_template('future_revenue.html', graph_data=graph_data, title='Future Revenue')
 
 

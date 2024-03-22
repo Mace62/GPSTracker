@@ -56,20 +56,21 @@
         {% for friend in friends %}
         <div class="mb-4">
           <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
               <small class="text-muted">
                 {{ friend.username }}
               </small>
               <form action="{{ url_for('remove_friend', friend_id=friend.id) }}" method="post" class="d-inline">
                 {{ form.csrf_token }}
-                <button type="submit" class="btn btn-danger">Remove Friend</button>
+                <button type="submit" class="btn btn-danger float-end">Remove Friend</button>
               </form>
             </div>
           </div>
         </div>
+        
         {% endfor %}
         {% else %}
-        <p>Add some friends by looking them up :) </p>
+        <p>Search for friends to add by typing their username into the search bar!</p>
          {% endif %}
       </div>
     </div>
@@ -117,12 +118,12 @@
                 {% elif follow_status[user.id].status == 'accepted' %}
                     <form action="{{ url_for('remove_friend', friend_id=user.id) }}" method="post">
                         {{ form.csrf_token }}
-                        <button type="submit" class="btn btn-success">Friend</button>
+                        <button type="submit" class="btn btn-danger">Remove Friend</button>
                     </form>
                 {% else %}
                     <form action="{{ url_for('send_friend_request', username=user.username) }}" method="post">
                         {{ form.csrf_token }}
-                        <button type="submit" class="btn btn-primary" >Add friend</button>
+                        <button type="submit" class="btn btn-primary">Add friend</button>
                       </form>
                 {% endif %}
             </div>

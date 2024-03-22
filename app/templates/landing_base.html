@@ -8,118 +8,8 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <script src="https://kit.fontawesome.com/19809d9137.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='local_landing.css')}}">
     <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Jura" />
-    <style>
-        .card {
-            max-width: 25rem;
-            margin: auto;
-            margin-top: 50px;
-            background-color: #bdb1a0;
-            border: none;
-        }
-        body {
-            background-color: #bdb1a0;
-        }
-        h1, .navbar-brand {
-            font-family: Jura;
-            font-size: 40px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 700;
-            line-height: 26.4px;
-            color: black;
-        }
-        h3 {
-            font-family: Jura;
-            font-size: 14px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 700;
-            line-height: 15.4px;
-        }
-        p {
-            font-family: Jura;
-            font-size: 14px;
-            font-style: normal;
-            font-variant: normal;
-            font-weight: 400;
-            line-height: 20px;
-        }
-        a {
-            color: #132b2c;
-        }
-        .btn {
-            font-family: Jura;
-            background-color: #132b2c;
-            border: none;
-            color: #ffffff;
-        }
-        .btn:hover {
-            background-color: #0e1f20;
-            color: #ffffff;
-        }
-        .navbar {
-            color: black;
-            font-family: Jura;
-            background-color: #132b2c;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding-top: 10px;
-            padding-bottom: 10px;
-        }
-        .navbar-brand img {
-            height: 40px;
-            width: auto;
-        }
-        .navbar-brand:hover {
-            opacity: 0.8;
-        }
-        .header {
-            padding-top: 50px;
-            padding-bottom: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #132b2c;
-        }
-        h1, h2, h3, h4, h5, h6 {
-
-            font-family: Jura;
-            color: #132b2c;
-        }
-        .content-container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .alert {
-            border-radius: 8px;
-        }
-        .footer {
-            background-color: #343a40;
-            color: #ffffff;
-            padding: 10px;
-            text-align: center;
-        }
-        .footer a {
-            color: #ffffff;
-            text-decoration: none;
-        }
-        .footer a:hover {
-            text-decoration: underline;
-        }
-        .social-icons a {
-            color: #ffffff;
-            font-size: 1.5rem;
-            margin: 0 10px;
-            transition: opacity 0.3s;
-        }
-        .social-icons a:hover {
-            opacity: 0.8;
-        }
-    </style>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% if title %}
@@ -143,7 +33,7 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/login" style="color: black;">LOGIN</a>
+                        <a class="nav-link" href="/login" style="color: black;"><strong>LOGIN</strong></a>
                     </li>
                 </ul>
             </div>
@@ -156,15 +46,6 @@
     </div>
 
     <div class="container content-container">
-        <!-- {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                <div class="alert {% if category == 'danger' %}alert-danger{% else %}alert-success{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %} -->
 
         {% block content %}{% endblock %}
     </div>

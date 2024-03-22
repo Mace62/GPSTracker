@@ -2,7 +2,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-<h1>This is the home page.</h1>
+<h1 style="text-align: center;">HOMEPAGE</h1>
+<h2 style="text-align: center;"><b>Welcome, {{ username }}.</b></h2>
+<br>
+<h3 style="text-align: center;"><i class="fa-solid fa-person-hiking" style="padding-right: 10px;"></i><em>There are currently {{ num_subs }} active users on TerraTracker right now! Add friends and create groups to share your most memorable expeditions!</em></h3>
+<br>
+<h3 style="text-align: center;"><i class="fa-solid fa-mountain-sun" style="padding-right: 10px;"></i><em>Think you've got your best time yet? Upload your adventure and compare them to your previous journeys now!</em></h3>
+<br>
+<h3 style="text-align: center;"><i class="fa-regular fa-credit-card" style="padding-right: 10px;"></i><em>Want to stock up on your TerraTracker subscription? Head to the Profile section to buy another membership today!</em></h3>
 
 {% endblock %}
