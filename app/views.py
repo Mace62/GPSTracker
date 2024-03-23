@@ -331,6 +331,13 @@ def logout():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated:
+        if Admin.query.filter_by(user_id=current_user.id).first():
+            flash('You are already logged in as admin')
+            return redirect(url_for('admin'))
+        else:
+            flash('You are already logged in')
+            return redirect(url_for('homepage'))
     form = RegisterForm()
     create_admin()
     if form.validate_on_submit():
@@ -380,7 +387,7 @@ def create_admin():
         new_admin = User(username="admin",
                          password=bcrypt.generate_password_hash(
                              "Admin123!"), firstname="admin", lastname="admin",
-                         email="admin@admin.com")
+                         email="admin@admin.com", has_paid=True)
         db.session.add(new_admin)
         db.session.commit()
         admin = Admin(user_id=new_admin.id)
@@ -390,6 +397,13 @@ def create_admin():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        if Admin.query.filter_by(user_id=current_user.id).first():
+            flash('You are already logged in as admin')
+            return redirect(url_for('admin'))
+        else:
+            flash('You are already logged in')
+            return redirect(url_for('homepage'))
     form = LoginForm()
     create_admin()
     if form.validate_on_submit():
@@ -650,26 +664,31 @@ def create_group(user_ids, group_name):
     db.session.commit()
     return new_group
 
+
 @app.route('/share/<filename>', methods=['GET', 'POST'])
 @login_required
 def share(filename):
     selection_form = ShareSelectionForm()
-    user_groups = models.GroupMember.query.filter_by(
+    user_groups = GroupMember.query.filter_by(
         user_id=current_user.id).all()
     # Extract group IDs for querying Group details
     group_ids = [membership.group_id for membership in user_groups]
-    groups = models.Group.query.filter(
-        models.Group.id.in_(group_ids)).all() if group_ids else []
+    groups = Group.query.filter(
+        Group.id.in_(group_ids)).all() if group_ids else []
     selection_form.group.choices = [
         ('', '--- Select a Group ---')] + [(g.id, g.name) for g in groups]
-    
+
     if selection_form.validate_on_submit():
         selected_group_id = selection_form.group.data
-        selected_group = models.Group.query.get(selected_group_id)
+        selected_group = Group.query.get(selected_group_id)
         if selected_group:
-            gpx_file = models.GPXFileData.query.filter_by(filename=filename).first()
-            if not models.SharedGPXFile.query.filter_by(file_id=gpx_file.id, group_id=selected_group_id).first():
-                new_share = models.SharedGPXFile(file_id=gpx_file.id, group_id=selected_group_id)
+            # Check if the file is already shared with the selected group
+            gpx_file = GPXFileData.query.filter_by(filename=filename).first()
+            if not (SharedGPXFile.query.filter_by(file_id=gpx_file.id,
+                                                  group_id=selected_group_id)
+                    .first()):
+                new_share = SharedGPXFile(file_id=gpx_file.id,
+                                          group_id=selected_group_id)
                 db.session.add(new_share)
                 db.session.commit()
                 flash('File shared successfully.', 'success')
@@ -678,29 +697,33 @@ def share(filename):
             return redirect(url_for('list_user_files'))
         else:
             flash('Invalid group selected.', 'error')
-    return render_template('share.html', selection_form=selection_form, filename=filename)
+    return render_template('share.html', selection_form=selection_form,
+                           filename=filename, title="Share")
+
 
 @app.route('/add/<filename>', methods=['GET', 'POST'])
 @login_required
 def add(filename):
     selection_form = AddSelectionForm()
-    user_PMGS = models.PMG.query.filter_by(
+    user_PMGS = PMG.query.filter_by(
         user_id=current_user.id).all()
     # Extract group IDs for querying Group details
     pmg_ids = [pmg_info.group_id for pmg_info in user_PMGS]
 
-    groups = models.Group.query.filter(
-        models.Group.id.in_(pmg_ids)).all() if pmg_ids else []
+    groups = Group.query.filter(
+        Group.id.in_(pmg_ids)).all() if pmg_ids else []
     selection_form.pmg.choices = [
         ('', '--- Select a PMG ---')] + [(g.id, g.name) for g in groups]
-    
+
     if selection_form.validate_on_submit():
         selected_group_id = selection_form.pmg.data
-        selected_group = models.Group.query.get(selected_group_id)
+        selected_group = Group.query.get(selected_group_id)
         if selected_group:
-            gpx_file = models.GPXFileData.query.filter_by(filename=filename).first()
-            if not models.SharedGPXFile.query.filter_by(file_id=gpx_file.id, group_id=selected_group_id).first():
-                new_share = models.SharedGPXFile(file_id=gpx_file.id, group_id=selected_group_id)
+            gpx_file = GPXFileData.query.filter_by(filename=filename).first()
+            if not (SharedGPXFile.query.filter_by(file_id=gpx_file.id,
+                                                  group_id=selected_group_id)
+                    .first()):
+                new_share = SharedGPXFile(file_id=gpx_file.id, group_id=selected_group_id)
                 db.session.add(new_share)
                 db.session.commit()
                 flash('File Added successfully.', 'success')
@@ -709,7 +732,8 @@ def add(filename):
             return redirect(url_for('list_user_files'))
         else:
             flash('Invalid PMG selected.', 'error')
-    return render_template('add.html', selection_form=selection_form, filename=filename)
+    return render_template('add.html', selection_form=selection_form,
+                           filename=filename, title="Add")
 
 
 @app.route('/group', defaults={'group_id': None}, methods=['GET', 'POST'])
@@ -780,68 +804,6 @@ def group(group_id):
                            display_group_name=display_group_name,
                            num_groups=num_groups, title='Groups')
 
-@app.route('/pmgs', defaults={'pmg_id': None}, methods=['GET', 'POST'])
-@app.route('/pmgs/<pmg_id>', methods=['GET', 'POST'])
-@login_required
-def pmgs(pmg_id):
-    creation_form = PMGCreationForm()
-    selection_form = PMGSelectionForm()
-
-    user_PMGS = models.PMG.query.filter_by(
-        user_id=current_user.id).all()
-    # Extract group IDs for querying Group details
-    pmg_ids = [pmg_info.group_id for pmg_info in user_PMGS]
-
-    groups = models.Group.query.filter(
-        models.Group.id.in_(pmg_ids)).all() if pmg_ids else []
-    selection_form.pmg.choices = [
-        ('', '--- Select a PMG ---')] + [(g.id, g.name) for g in groups]
-
-    num_groups = models.GroupMember.query.filter_by(
-        user_id=current_user.id).count()
-
-    if creation_form.validate_on_submit():
-        # Extracted name of the group from the form
-        pmg_name = creation_form.pmg_name.data
-
-
-        # Query to check if any user in the user_ids list already has a group with the given name
-        existing_group = None
-
-        if existing_group:
-            # If such a group exists, inform the user and do not proceed with creating the new group
-            flash(
-                'A group with this name already exists within your selected group of friends.', 'error')
-        else:
-            # If the name is unique, proceed with group creation
-            new_pmg_group = models.Group(name=pmg_name)
-            db.session.add(new_pmg_group)
-            db.session.commit()
-            new_pmg = models.PMG(user_id=current_user.id, group_id=new_pmg_group.id)
-            db.session.add(new_pmg)
-            db.session.commit()
-            flash('PMG created successfully.', 'success')
-            return redirect(url_for('pmgs'))  # Redirect as appropriate
-
-   
-
-    if pmg_id is not None and pmg_id != '':
-        selection_form.pmg.data = pmg_id
-    else:
-        # Logic for rendering the default /group page...
-        selection_form.pmg.data = ''
-
-    if pmg_id:
-        selected_group = models.Group.query.get(pmg_id)
-        if selected_group:
-            display_group_name = selected_group.name
-        else:
-            display_group_name = '-- Select a Group --'
-    else:
-        display_group_name = '-- Select a Group --'
-
-    return render_template('pmgs.html', creation_form=creation_form, groups=groups, selection_form=selection_form, display_group_name=display_group_name, num_groups=num_groups, title='PMGs')
-
 
 @app.route('/pmgs', defaults={'pmg_id': None}, methods=['GET', 'POST'])
 @app.route('/pmgs/<pmg_id>', methods=['GET', 'POST'])
@@ -850,43 +812,41 @@ def pmgs(pmg_id):
     creation_form = PMGCreationForm()
     selection_form = PMGSelectionForm()
 
-    user_PMGS = models.PMG.query.filter_by(
+    user_PMGS = PMG.query.filter_by(
         user_id=current_user.id).all()
     # Extract group IDs for querying Group details
     pmg_ids = [pmg_info.group_id for pmg_info in user_PMGS]
 
-    groups = models.Group.query.filter(
-        models.Group.id.in_(pmg_ids)).all() if pmg_ids else []
+    groups = Group.query.filter(
+        Group.id.in_(pmg_ids)).all() if pmg_ids else []
     selection_form.pmg.choices = [
         ('', '--- Select a PMG ---')] + [(g.id, g.name) for g in groups]
 
-    num_groups = models.GroupMember.query.filter_by(
+    num_groups = GroupMember.query.filter_by(
         user_id=current_user.id).count()
 
     if creation_form.validate_on_submit():
         # Extracted name of the group from the form
         pmg_name = creation_form.pmg_name.data
 
-
-        # Query to check if any user in the user_ids list already has a group with the given name
+        # Query to check if any user in user_ids list has group with given name
         existing_group = None
 
         if existing_group:
-            # If such a group exists, inform the user and do not proceed with creating the new group
+            # If such group exists, do not proceed with creating the new group
             flash(
-                'A group with this name already exists within your selected group of friends.', 'error')
+                'A group with this name already exists within your selected \
+                    group of friends.', 'error')
         else:
             # If the name is unique, proceed with group creation
-            new_pmg_group = models.Group(name=pmg_name)
+            new_pmg_group = Group(name=pmg_name)
             db.session.add(new_pmg_group)
             db.session.commit()
-            new_pmg = models.PMG(user_id=current_user.id, group_id=new_pmg_group.id)
+            new_pmg = PMG(user_id=current_user.id, group_id=new_pmg_group.id)
             db.session.add(new_pmg)
             db.session.commit()
             flash('PMG created successfully.', 'success')
             return redirect(url_for('pmgs'))  # Redirect as appropriate
-
-   
 
     if pmg_id is not None and pmg_id != '':
         selection_form.pmg.data = pmg_id
@@ -895,7 +855,7 @@ def pmgs(pmg_id):
         selection_form.pmg.data = ''
 
     if pmg_id:
-        selected_group = models.Group.query.get(pmg_id)
+        selected_group = Group.query.get(pmg_id)
         if selected_group:
             display_group_name = selected_group.name
         else:
@@ -903,8 +863,10 @@ def pmgs(pmg_id):
     else:
         display_group_name = '-- Select a Group --'
 
-    return render_template('pmgs.html', creation_form=creation_form, groups=groups, selection_form=selection_form, display_group_name=display_group_name, num_groups=num_groups, title='PMGs')
-
+    return render_template('pmgs.html', creation_form=creation_form,
+                           groups=groups, selection_form=selection_form,
+                           display_group_name=display_group_name,
+                           num_groups=num_groups, title='PMGs')
 
 
 @app.route('/all_users')
@@ -1170,24 +1132,25 @@ def generate_group_map(group_id):
     if not os.path.exists(group_folder):
         os.makedirs(group_folder)
 
-    file_ids = models.SharedGPXFile.query.filter_by(group_id=group_id).all()
+    file_ids = SharedGPXFile.query.filter_by(group_id=group_id).all()
 
-    gpx_files = models.GPXFileData.query.filter(
-        models.GPXFileData.id.in_([file_id.file_id for file_id in file_ids])).all()
+    gpx_files = GPXFileData.query.filter(
+        GPXFileData.id.in_([file_id.file_id for file_id in file_ids])).all()
 
     run_map = folium.Map(
             location=[0, 0], tiles=None, zoom_start=12)
         
-        # add Openstreetmap layer
+    # add Openstreetmap layer
     folium.TileLayer('openstreetmap', name='OpenStreet Map').add_to(run_map)
 
     colour_counter = 0
     for gpx_file in gpx_files:
-        waypoints = models.GPXWaypoint.query.filter(models.GPXWaypoint.file_id.in_([gpx_file.id for gpx_file in gpx_files])).all()
-        tracks = models.GPXTrack.query.filter_by(file_id=gpx_file.id).all()
-        track_points = models.GPXTrackPoint.query.join(models.GPXTrack).filter(
-            models.GPXTrack.file_id == gpx_file.id).all()
-
+        waypoints = GPXWaypoint.query.filter(
+            GPXWaypoint.file_id.in_(
+                [gpx_file.id for gpx_file in gpx_files])).all()
+        tracks = GPXTrack.query.filter_by(file_id=gpx_file.id).all()
+        track_points = GPXTrackPoint.query.join(GPXTrack).filter(
+            GPXTrack.file_id == gpx_file.id).all()
 
         # Grab lat and long coords to initialise the map
         # Set default coordinates if no track points or waypoints are available
@@ -1202,26 +1165,28 @@ def generate_group_map(group_id):
 
         run_map.location = [map_lat, map_long]
 
-
-        colors = ["blue", "red", "green", "orange", "purple", "yellow", "pink", "brown", "gray"]
+        colors = ["blue", "red", "green", "orange", "purple", "yellow", "pink",
+                  "brown", "gray"]
+        
         # create a feature group for tracks
-
         if tracks:
             for i, track in enumerate(tracks):
-                fg_tracks = folium.FeatureGroup(name=track.name).add_to(run_map)
-                track_points = models.GPXTrackPoint.query.filter_by(
+                fg_tracks = folium.FeatureGroup(
+                    name=track.name).add_to(run_map)
+                track_points = GPXTrackPoint.query.filter_by(
                     track_id=track.id).all()
 
                 # create a list of coordinates for the trackpoints
                 track_coords = [[point.latitude, point.longitude]
                                 for point in track_points]
-                owner_name = models.User.query.get(gpx_file.user_id).username
+                owner_name = User.query.get(gpx_file.user_id).username
                 # create a polyline with a different color for each track
-                folium.PolyLine(track_coords, color=colors[colour_counter % len(colors)],
-                                weight=4.5, opacity=1, tooltip=owner_name).add_to(fg_tracks)
-            
-            colour_counter += 1
+                folium.PolyLine(track_coords,
+                                color=colors[colour_counter % len(colors)],
+                                weight=4.5, opacity=1,
+                                tooltip=owner_name).add_to(fg_tracks)
 
+            colour_counter += 1
 
     map_file = f'{group_id}_map.html'
     run_map.save(os.path.join(group_folder, map_file))
@@ -1232,7 +1197,8 @@ def generate_group_map(group_id):
 
     # Modify the size of the map container div
     modified_html_content = html_content.replace(
-        'class="folium-map"', 'class="folium-map" style="width: 45%; height: 450px; border: 5px solid black;top: 10.0%; left: 5%"')
+        'class="folium-map"', 'class="folium-map" style="width: 45%; \
+            height: 450px; border: 5px solid black;top: 10.0%; left: 5%"')
 
     # Save the modified HTML content back to the file
     with open(os.path.join(group_folder, map_file), 'w') as f:
@@ -1251,6 +1217,7 @@ def check_map_status(filename):
     map_file = f'{filename}_map.html'
     map_ready = os.path.exists(os.path.join(user_folder, map_file))
     return jsonify({'map_ready': map_ready})
+
 
 @app.route('/check_group_map_status/<filename>')
 @login_required
@@ -1277,6 +1244,7 @@ def serve_map(filename):
             yield from f
 
     return Response(generate(), mimetype='text/html')
+
 
 @app.route('/serve_group_map/<filename>')
 @login_required
@@ -1307,21 +1275,28 @@ def view(filename):
                            stats=stats, elevation_data=elevation_data,
                            title='View Map')
 
+
 @app.route('/viewgroup/<group_id>')
 @login_required
 def viewgroup(group_id):
-    #check to see if user is part of group
-    if not models.GroupMember.query.filter_by(user_id=current_user.id, group_id=group_id).first():
-        if not models.PMG.query.filter_by(user_id=current_user.id, group_id=group_id).first():
+    # check to see if user is part of group
+    if not GroupMember.query.filter_by(user_id=current_user.id,
+                                       group_id=group_id).first():
+        if not PMG.query.filter_by(user_id=current_user.id,
+                                   group_id=group_id).first():
             flash('You are not part of this group!')
             return redirect(url_for('profile'))
     generate_group_map(group_id)
     map_file = f'{group_id}_map.html'
     map_url = url_for('serve_group_map', filename=map_file)
-    group_name = models.Group.query.get(group_id).name
+    group_name = Group.query.get(group_id).name
     is_pmg = False
-    is_pmg = models.PMG.query.filter_by(user_id=current_user.id, group_id=group_id).first() is not None
-    return render_template('view_group_map.html', map_url=map_url, group_name=group_name, group_id=group_id, is_pmg = is_pmg)
+    is_pmg = PMG.query.filter_by(user_id=current_user.id,
+                                 group_id=group_id).first() is not None
+    return render_template('view_group_map.html', map_url=map_url,
+                           group_name=group_name, group_id=group_id,
+                           is_pmg=is_pmg)
+
 
 @app.route('/download/<filename>')
 @login_required

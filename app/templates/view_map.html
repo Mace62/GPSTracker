@@ -5,15 +5,9 @@
 <h1 class="filename" style="text-align: center">{{ filename }}</h1>
 <h1 style="text-align: center">JOURNEY</h1>
 
-<!-- Loading Indicator -->
 <div id="loading" style="display: none">Generating map, please wait...</div>
 
-<!-- iframe initially hidden -->
-<iframe
-  id="mapFrame"
-  src=""
-  style="width: 100%; height: 600px; display: none"
-></iframe>
+<iframe id="mapFrame" src="" style="width: 100%; height: 600px; display: none"></iframe>
 
 <div id="stats">
   {% if stats %}
@@ -30,51 +24,48 @@
   </div>
 
   <h3 style="text-align: center">ELEVATION CHARTS</h3>
-<div
-  id="elevation-charts"
-  style="display: flex; flex-direction: column; margin-top: 10px"
->
-  {% for data in elevation_data %}
-  <div style="margin: 10px; background-color: #000000; border-radius: 10px">
-    <h4 style="text-align: center; color:white">{{ data.name }}</h4>
-    <canvas id="elevation-chart-{{ loop.index }}"></canvas>
-    <script>
-      var ctx = document.getElementById('elevation-chart-{{ loop.index }}').getContext('2d');
-      var elevationData = {{ data.elevation | tojson }};
-      var elevationChart = new Chart(ctx, {
+  <div id="elevation-charts" style="display: flex; flex-direction: column; margin-top: 10px">
+    {% for data in elevation_data %}
+    <div style="margin: 10px; background-color: #000000; border-radius: 10px">
+      <h4 style="text-align: center; color:white">{{ data.name }}</h4>
+      <canvas id="elevation-chart-{{ loop.index }}"></canvas>
+      <script>
+        var ctx = document.getElementById('elevation-chart-{{ loop.index }}').getContext('2d');
+        var elevationData = {{ data.elevation | tojson }};
+        var elevationChart = new Chart(ctx, {
           type: 'line',
           data: {
-              labels: Array.from(Array(elevationData.length).keys()), // Assuming each elevation point corresponds to a track point
-              datasets: [{
-                  label: 'Elevation',
-                  data: elevationData,
-                  backgroundColor: 'rgba(250, 250,250, 1)',
-                  borderColor: 'rgba(54, 162, 235, 1)',
-                  borderWidth: 3,
-                  lineTension: 0,
-                  pointRadius: 0
-              }]
+            labels: Array.from(Array(elevationData.length).keys()), // Assuming each elevation point corresponds to a track point
+            datasets: [{
+              label: 'Elevation',
+              data: elevationData,
+              backgroundColor: 'rgba(250, 250,250, 1)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 3,
+              lineTension: 0,
+              pointRadius: 0
+            }]
           },
           options: {
-              scales: {
-                  y: {
-                      beginAtZero: true,
-                      ticks: {
-                          color: 'white'
-                      }
-                  },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: 'white'
+                }
+              },
               x: {
-                      ticks: {
-                      color: 'white'
-                      }
-                  }
+                ticks: {
+                  color: 'white'
+                }
               }
+            }
           }
-      });
-    </script>
+        });
+      </script>
+    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
-</div>
   {% else %}
   <h2 style="text-align: center">No stats available for this track. Upload another file to get track points.</h2>
   {% endif %}
