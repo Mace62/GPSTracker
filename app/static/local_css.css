@@ -174,22 +174,20 @@ width: calc(100% - 40px); /* Full width minus padding */
 /* Add additional styling for the input */
 }
 
-
 .friend-card {
-display: inline-block; /* Display cards horizontally */
-margin: 10px;
-padding: 10px;
-color: white;
-background-color: #132b2c;
-border: 2px solid black;
-cursor: pointer;
+    display: inline-block; /* Display cards horizontally */
+    margin: 10px;
+    padding: 10px;
+    color: white;
+    background-color: #132b2c;
+    border: 2px solid black;
+    cursor: pointer;
 }
 
 .friend-card.selected {
 /* color: white; */
 background-color: #8B0000;
 }
-
 
 .group-item {
 margin: 5px 0;

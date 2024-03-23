@@ -38,11 +38,17 @@ class SearchForm(FlaskForm):
     submit = SubmitField('Search')
     
 
-
 class GroupCreationForm(FlaskForm):
     group_name = StringField('Group name', validators=[DataRequired()])
     selected_friends = HiddenField()  # Stores IDs of selected friends
     submit = SubmitField('Create Group')
+
+class PMGCreationForm(FlaskForm):
+    pmg_name = StringField('PMG name', validators=[DataRequired()])
+    submit = SubmitField('Create PMG')
+
+class PMGSelectionForm(FlaskForm):
+    pmg = SelectField('Select a Group', choices=[('', '--- Select a PMG ---')], validate_choice=False)
     
 
 class GroupSelectionForm(FlaskForm):
@@ -66,3 +72,10 @@ class VerifyLoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Disable Account')
 
+class ShareSelectionForm(FlaskForm):
+    group = SelectField('Select a Group', validate_choice=False)
+    submit = SubmitField('Share')
+
+class AddSelectionForm(FlaskForm):
+    pmg = SelectField('Select a PMG', validate_choice=False)
+    submit = SubmitField('Add')

@@ -5,12 +5,12 @@
     <div class="col-md-6">
       <div class="card">
         <div class="card-body">
-          <h2>Select a Group To View</h2>
+          <h2>Select a Personal Map Group To View</h2>
           <form id="group-selection-form">
             {{ selection_form.hidden_tag() }}
             <div class="form-group">
-              {{ selection_form.group.label }} {{
-              selection_form.group(class="form-control") }}
+              {{ selection_form.pmg.label }} {{
+              selection_form.pmg(class="form-control") }}
             </div>
           </form>
         </div>
@@ -21,33 +21,21 @@
     <div class="col-md-6">
       <div class="card">
         <div class="card-body">
-          <h2>Create a Group</h2>
+          <h2>Create a Personal Map Group</h2>
           <form method="post">
             {{ creation_form.hidden_tag() }}
             <div class="form-group">
-              <label for="group_name">Group Name</label>
-              {{ creation_form.group_name(class="form-control") }} {% if
-              creation_form.group_name.errors %} {% for error in
-              creation_form.group_name.errors %}
+              <label for="pmg_name">PMG Name</label>
+              {{ creation_form.pmg_name(class="form-control") }} {% if
+              creation_form.pmg_name.errors %} {% for error in
+              creation_form.pmg_name.errors %}
               <span style="color: red">{{ error }}</span>
               {% endfor %} {% endif %}
             </div>
 
-            <div id="friends-cards" class="mt-3">
-              <h4>Select Friends:</h4>
-              {% for friend_id, friend_name in friends_choices %}
-              <div class="friend-card" data-id="{{ friend_id }}">
-                {{ friend_name }}
-              </div>
-              {% endfor %}
-            </div>
-
-            <!-- Hidden field to store selected friend IDs -->
-            {{ creation_form.selected_friends }}
-
             <!-- Submit button -->
             <button type="submit" class="btn btn-primary mt-3">
-              Create Group
+              Create PMG
             </button>
           </form>
         </div>
@@ -57,7 +45,7 @@
 </div>
 
 <script>
-  document.getElementById("{{ selection_form.group.id }}").onchange =
+  document.getElementById("{{ selection_form.pmg.id }}").onchange =
     function () {
       var groupId = this.value;
       // Check if the placeholder value (e.g., '') is selected
