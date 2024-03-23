@@ -85,6 +85,9 @@
             .btn-danger {
                 background-color: #8B0000; /* Keeping btn-danger buttons red */
             }
+            .btn-secondary {
+                background-color: #5e5e5e; /* Keeping btn-danger buttons red */
+            }
 
             /* Hover effect for buttons */
             .btn:hover {
