@@ -1,8 +1,8 @@
 FROM python:3.6.8
 WORKDIR /app
+RUN echo "stripe_api_key=${STRAPI_SECRET}" > secret.py
 COPY ./requirements.txt /app
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 COPY . .
-RUN echo "stripe_api_key=${STRAPI_SECRET}" > /app/secret.py
 CMD ["python", "testing.py"]
