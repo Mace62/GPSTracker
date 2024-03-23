@@ -1,85 +1,9 @@
-{% extends "base.html" %} {% block content %}
-<style>
-  h1 {
-    font-family: "Jura", sans-serif;
-    font-weight: bold;
-    text-align: center;
-  }
-  #mapFrame {
-    border-radius: 10px;
-  }
-  h2 {
-    font-family: "Jura", sans-serif;
-    font-weight: bold;
-    margin-top: 40px;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  h3 {
-    font-family: "Jura", sans-serif;
-    font-weight: bold;
-    margin-top: 50px;
-    text-align: center;
-  }
-  h4 {
-    font-family: "Jura", sans-serif;
-    font-weight: bold;
-    margin-top: 50px;
-    text-align: center;
-    color: #36a2eb;
-  }
-  /* .stat-box {
-        border: 1px solid black;
-        margin: 20px;
-        padding: 10px;
-        display: inline-block;
-        background-color: #132B2C; 
-        color: #FFFFFF; 
-        text-align: center; 
-        font-family: Jura;
-        width: 200px; 
-        border-radius: 10px; 
-    } */
-  #stats {
-    font-family: Jura, sans-serif;
-  }
-  #stats h2 {
-    color: #000000;
-  }
-  #stats table {
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 20px;
-  }
-  /* #stats tr {
-            background-color: rgb(6, 38, 3);
-            color: #ddd;
-        } */
+{% extends "base.html" %}
 
-  #stats td {
-    border: 2px solid #000000;
-    padding: 8px;
-    text-align: center;
-    font-size: 24px;
-  }
-  #stats tr:nth-child(5n + 1) {
-    background-color: black;
-    color: white;
-  }
-  #stats tr:nth-child(5n + 1) td {
-    /* text-align: right; */
-    font-size: 28px;
-  }
-  #stats tr:nth-child(5n + 1):hover {
-    background-color: #000000;
-  }
-  #stats tr:hover {
-    background-color: #ddd;
-  }
-</style>
+{% block content %}
 
-<h1>{{ filename }}</h1>
-<h1>JOURNEY</h1>
+<h1 class="filename" style="text-align: center">{{ filename }}</h1>
+<h1 style="text-align: center">JOURNEY</h1>
 
 <!-- Loading Indicator -->
 <div id="loading" style="display: none">Generating map, please wait...</div>
@@ -93,24 +17,26 @@
 
 <div id="stats">
   {% if stats %}
-  <h2>Track Stats</h2>
-  <table>
-    {% for stat_name, stat_value in stats.items() %}
-    <tr>
-      <td>{{ stat_name }}</td>
-      <td>{{ stat_value }}</td>
-    </tr>
-    {% endfor %}
-  </table>
+  <h2 style="text-align: center">Track Stats</h2>
+  <div class="table-responsive">
+    <table>
+      {% for stat_name, stat_value in stats.items() %}
+      <tr>
+        <td>{{ stat_name }}</td>
+        <td>{{ stat_value }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
 
-  <h3>ELEVATION CHARTS</h3>
+  <h3 style="text-align: center">ELEVATION CHARTS</h3>
 <div
   id="elevation-charts"
   style="display: flex; flex-direction: column; margin-top: 10px"
 >
   {% for data in elevation_data %}
   <div style="margin: 10px; background-color: #000000; border-radius: 10px">
-    <h4>{{ data.name }}</h4>
+    <h4 style="text-align: center; color:white">{{ data.name }}</h4>
     <canvas id="elevation-chart-{{ loop.index }}"></canvas>
     <script>
       var ctx = document.getElementById('elevation-chart-{{ loop.index }}').getContext('2d');
@@ -150,7 +76,7 @@
   {% endfor %}
 </div>
   {% else %}
-  <h2>No stats available for this track. Upload another file to get track points.</h2>
+  <h2 style="text-align: center">No stats available for this track. Upload another file to get track points.</h2>
   {% endif %}
 </div>
 
