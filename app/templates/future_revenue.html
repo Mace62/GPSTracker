@@ -1,27 +1,28 @@
 {% extends "admin_base.html" %}
 {% block content %}
-    <h1 style="text-align: center;">Future Revenue</h1>
-    <p style="text-align: center;">Displayed on a weekly basis</p>
-    <br>
-    <body>
-        <canvas id="myChart"></canvas>
+<h1 style="text-align: center;">Future Revenue</h1>
+<p style="text-align: center;">Displayed on a weekly basis</p>
+<br>
 
-        <script>
-            var ctx = document.getElementById('myChart').getContext('2d');
-            var graphData = {{ graph_data | tojson }};
-            var myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: graphData.labels,
-                    datasets: [{
-                        label: 'Weekly Revenue (£)',
-                        data: graphData.data,
-                        backgroundColor: 'rgba(250, 250,250, 1)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
+<body>
+    <canvas id="myChart"></canvas>
+
+    <script>
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var graphData = {{ graph_data | tojson }};
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: graphData.labels,
+                datasets: [{
+                    label: 'Weekly Revenue (£)',
+                    data: graphData.data,
+                    backgroundColor: 'rgba(250, 250,250, 1)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -58,14 +59,14 @@
                 },
                 elements: {
                     line: {
-                        tension: 0 // Disables bezier curves
+                        tension: 0
                     }
                 },
                 backgroundColor: 'white',
-                }
-            });
+            }
+        });
 
-            ctx.canvas.style.backgroundColor = 'white';
-        </script>
-    </body>
+        ctx.canvas.style.backgroundColor = 'white';
+    </script>
+</body>
 {% endblock %}

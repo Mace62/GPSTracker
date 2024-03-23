@@ -1,97 +1,104 @@
-{% extends "landing_base.html" %} 
+{% extends "landing_base.html" %}
 {% block content %}
- <!-- Hero Section --> 
- <section class="hero text-center py-5"> 
-        <div class="container">
-            <div class="row">
-                <div class="col-md-8 mx-auto">
-                    <h1 class="display-4 mb-4">Welcome to TerraTracker: Your Adventure Awaits</h1>
-                    <p class="lead">Discover, track, and share your adventures with TerraTracker, the ultimate GPS tracker for outdoor enthusiasts. Inspired by the robust capabilities of popular GPS platforms, TerraTracker takes your journey to the next level.</p>
-                    <a href="/register" class="btn btn-lg">Join Now</a> 
-                </div> 
-            </div> 
+<section class="hero text-center py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <h1 class="display-4 mb-4">Welcome to TerraTracker: Your Adventure Awaits</h1>
+                <p class="lead">Discover, track, and share your adventures with TerraTracker, the ultimate GPS tracker
+                    for outdoor enthusiasts. Inspired by the robust capabilities of popular GPS platforms, TerraTracker
+                    takes your journey to the next level.</p>
+                <a href="/register" class="btn btn-lg">Join Now</a>
+            </div>
         </div>
-    </section>
-    <!-- Features Section -->
-    <section class="features text-center py-5">
-        <div class="container">
-            <h2 class="mb-5">Why TerraTracker?</h2>
-            <div class="row">
-                <div class="col-md-4">
-                    <h3>Explore Routes</h3>
-                    <i class="fas fa-map-signs fa-flip fa-2x"></i>
-                    <p>Find and follow pre-mapped routes made from fellow adventurers or create your own. Discover new trails and paths shared by your group of adventurers.</p>
+    </div>
+</section>
+<section class="features text-center py-5">
+    <div class="container">
+        <h2 class="mb-5">Why TerraTracker?</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <h3>Explore Routes</h3>
+                <i class="fas fa-map-signs fa-flip fa-2x"></i>
+                <p>Find and follow pre-mapped routes made from fellow adventurers or create your own. Discover new
+                    trails and paths shared by your group of adventurers.</p>
+            </div>
+            <div class="col-md-4">
+                <h3>Track Your Progress</h3>
+                <i class="fas fa-map-pin fa-bounce fa-2x"></i>
+                <p>Monitor your distance, average speed, elevation, and more. View detailed analytics of your activities
+                    to track your performance over time.</p>
+            </div>
+            <div class="col-md-4">
+                <h3>Connect and Compete</h3>
+                <i class="fas fa-flag-checkered fa-beat fa-2x"></i>
+                <p>Compare your stats against friends and your own personal records. Stay motivated by sharing your
+                    activities and milestones.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="testimonials text-center py-5">
+    <div class="container">
+
+        <h2 class="mb-5"><i class="fa-solid fa-users" style="padding-right: 10px;"></i>What Our Users Say</h2>
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="testimonial-item mb-4">
+                    <blockquote class="blockquote">
+                        <p class="mb-0">"TerraTracker has transformed the way I explore the outdoors. The friend groups
+                            feature is a game-changer!"</p>
+                        <br>
+                        <footer class="blockquote-footer">Alex</footer>
+                    </blockquote>
                 </div>
-                <div class="col-md-4">
-                    <h3>Track Your Progress</h3>
-                    <i class="fas fa-map-pin fa-bounce fa-2x"></i>
-                    <p>Monitor your distance, average speed, elevation, and more. View detailed analytics of your activities to track your performance over time.</p>
-                </div>
-                <div class="col-md-4">
-                    <h3>Connect and Compete</h3> 
-                    <i class="fas fa-flag-checkered fa-beat fa-2x"></i> 
-                    <p>Compare your stats against friends and your own personal records. Stay motivated by sharing your activities and milestones.</p>
+                <div class="testimonial-item mb-4">
+                    <blockquote class="blockquote">
+                        <p class="mb-0">"I love tracking my hikes and sharing them with my friends. The community is
+                            incredibly supportive."</p>
+                        <br>
+                        <footer class="blockquote-footer">Jamie</footer>
+                    </blockquote>
                 </div>
             </div>
         </div>
-    </section>
-    
-     <!-- Testimonials Section --> 
-    <section class="testimonials text-center py-5">
-        <div class="container">
-            
-            <h2 class="mb-5"><i class="fa-solid fa-users" style="padding-right: 10px;"></i>What Our Users Say</h2>
-            <div class="row">
-                <div class="col-md-6 mx-auto">
-                    <div class="testimonial-item mb-4"> 
-                        <blockquote class="blockquote">
-                            <p class="mb-0">"TerraTracker has transformed the way I explore the outdoors. The friend groups feature is a game-changer!"</p>
-                            <br>
-                            <footer class="blockquote-footer">Alex</footer>
-                        </blockquote>
-                    </div>
-                    <div class="testimonial-item mb-4">
-                        <blockquote class="blockquote">
-                            <p class="mb-0">"I love tracking my hikes and sharing them with my friends. The community is incredibly supportive."</p>
-                            <br>
-                            <footer class="blockquote-footer">Jamie</footer>
-                        </blockquote>
-                    </div>
+    </div>
+</section>
+
+<section class="faqs text-center py-5">
+    <div class="container">
+        <h2 class="mb-5"><i class="fa-solid fa-comments" style="padding-right: 10px;"></i>Frequently Asked Questions
+        </h2>
+        <h3 class="mb-4">Here are answers to the most commonly asked questions by our community:</h3>
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="faq-item mb-4">
+                    <h4>What kind of subscriptions are there?</h4>
+                    <p>Answer: We offer Weekly (£1.99), Monthly (£6.99), and Yearly (£79.99) subscriptions.</p>
+                </div>
+                <div class="faq-item mb-4">
+                    <h4>Am I stuck in a contract if I buy a subscription?</h4>
+                    <p>Answer: No, you're able to cancel whenever you wish.</p>
+                </div>
+                <div class="faq-item mb-4">
+                    <h4>How can I contact customer support?</h4>
+                    <p>Answer: You can reach our customer support team by emailing support@terratracker.com or by using
+                        the contact form on our website.</p>
+                </div>
+                <div class="faq-item mb-4">
+                    <h4>Is my personal information secure?</h4>
+                    <p>Answer: Yes, we take the security and privacy of your personal information very seriously. We use
+                        encryption and other security measures to protect your data.</p>
+                </div>
+                <div class="faq-item mb-4">
+                    <h4>Are there any additional fees?</h4>
+                    <p>Answer: No, there are no hidden fees. Your subscription fee covers all features and services
+                        offered by TerraTracker.</p>
                 </div>
             </div>
         </div>
-    </section>
-    
-    <!-- FAQs Section -->
-    <section class="faqs text-center py-5">
-        <div class="container">
-            <h2 class="mb-5"><i class="fa-solid fa-comments" style="padding-right: 10px;"></i>Frequently Asked Questions</h2>
-            <h3 class="mb-4">Here are answers to the most commonly asked questions by our community:</h3>
-            <div class="row">
-                <div class="col-md-8 mx-auto">
-                    <div class="faq-item mb-4">
-                        <h4>What kind of subscriptions are there?</h4>
-                        <p>Answer: We offer Weekly (£1.99), Monthly (£6.99), and Yearly (£79.99) subscriptions.</p>
-                    </div>
-                    <div class="faq-item mb-4">
-                        <h4>Am I stuck in a contract if I buy a subscription?</h4>
-                        <p>Answer: No, you're able to cancel whenever you wish.</p>
-                    </div>
-                    <div class="faq-item mb-4">
-                        <h4>How can I contact customer support?</h4>
-                        <p>Answer: You can reach our customer support team by emailing support@terratracker.com or by using the contact form on our website.</p>
-                    </div>
-                    <div class="faq-item mb-4">
-                        <h4>Is my personal information secure?</h4>
-                        <p>Answer: Yes, we take the security and privacy of your personal information very seriously. We use encryption and other security measures to protect your data.</p>
-                    </div>
-                    <div class="faq-item mb-4">
-                        <h4>Are there any additional fees?</h4>
-                        <p>Answer: No, there are no hidden fees. Your subscription fee covers all features and services offered by TerraTracker.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    
+    </div>
+</section>
+
 {% endblock %}

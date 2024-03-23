@@ -24,9 +24,7 @@
         <td>{{ entry.filename }}</td>
         <td>{{ entry.upload_time.strftime('%d/%m/%Y %H:%M') }}</td>
         <td>
-          <a href="{{ url_for('download_file', filename=entry.filename) }}"
-            >Download</a
-          >
+          <a href="{{ url_for('download_file', filename=entry.filename) }}">Download</a>
         </td>
         <td>
           <a href="{{ url_for('view', filename=entry.filename) }}">View</a>
@@ -38,9 +36,7 @@
           <a href="{{ url_for('add', filename=entry.filename) }}"> Add</a>
         </td>
         <td>
-          <a href="{{ url_for('delete_file', filename=entry.filename) }}"
-            >Delete</a
-          >
+          <a href="{{ url_for('delete_file', filename=entry.filename) }}">Delete</a>
         </td>
       </tr>
       {% endfor %}

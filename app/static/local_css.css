@@ -1,239 +1,246 @@
+
 body,
 html {
-  font-family: "Jura", sans-serif; /* Change font family to Jura */
-  background-color: #bdb1a0;
-  margin: 0;
-  padding: 0;
-  height: 100%;
+    font-family: 'Jura', sans-serif; /* Change font family to Jura */
+    background-color: #bdb1a0;
+    margin: 0;
+    padding: 0;
+    height: 100%;
 }
 
 .card {
-  max-width: 25rem;
-  margin: auto;
-  margin-top: 50px;
-  background-color: #bdb1a0;
-  border: none;
+    max-width: 25rem;
+    margin: auto;
+    margin-top: 50px;
+    background-color: #bdb1a0;
+    border: none;
 }
 
 .navbar {
-  background-color: transparent;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding-top: 10px;
-  padding-bottom: 10px;
-  font-family: "Jura", sans-serif; /* Change font family to Jura */
-  border-bottom: 10px solid black; /* Set bottom border to black */
+    background-color: transparent;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-family: 'Jura', sans-serif; /* Change font family to Jura */
+    border-bottom: 10px solid black; /* Set bottom border to black */
 }
 
 .navbar-brand {
-  color: black; /* Set navbar title color to black */
+    color: black; /* Set navbar title color to black */
 }
 
 .navbar-brand img {
-  height: 40px;
-  width: auto;
+    height: 40px;
+    width: auto;
 }
 
 .navbar-brand:hover {
-  opacity: 0.8;
+    opacity: 0.8;
 }
 
 .navbar-nav .nav-link {
-  color: black;
+    color: black;
 }
 
 .header {
-  padding-top: 50px;
-  padding-bottom: 30px;
-  text-align: center;
+    padding-top: 50px;
+    padding-bottom: 30px;
+    text-align: center;
 }
 
 .header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  text-align: center;
-  color: #343a40;
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    color: #343a40;
 }
 
 .content-container {
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .alert {
-  border-radius: 8px;
+    border-radius: 8px;
 }
 
 .container {
-  min-height: 100%;
-  padding-bottom: 0; /* Remove padding from the bottom */
-  box-sizing: border-box;
+    min-height: 100%;
+    padding-bottom: 0; /* Remove padding from the bottom */
+    box-sizing: border-box;
 }
 
-/* Styling for buttons */
+    /* Styling for buttons */
 .btn {
-  background-color: #132b2c;
-  border: 2px solid black;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    background-color: #132b2c;
+    border: 2px solid black;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
 /* Styling for btn-danger buttons */
 .btn-danger {
-  background-color: #8b0000; /* Keeping btn-danger buttons red */
+    background-color: #8B0000; /* Keeping btn-danger buttons red */
 }
 
 /* Hover effect for buttons */
 .btn:hover {
-  background-color: black;
-  border-color: #132b2c;
-  color: white;
+    background-color: black;
+    border-color: #132b2c;
+    color: white;
 }
 
+
 .table {
-  width: 100%;
-  margin: auto;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  border-collapse: collapse;
-  border-radius: 6px;
+width: 100%;
+margin: auto;
+margin-top: 20px;
+margin-bottom: 20px;
+border-collapse: collapse;
+border-radius:6px;
 }
 
 .table tr {
-  border: 4px solid #b4afa2; /* Add a border to each row */
-  border-radius: 20px; /* Add rounded edges to each row */
+border: 4px solid #B4AFA2; /* Add a border to each row */
+border-radius:20px; /* Add rounded edges to each row */
 }
 
 .table th,
 .table td {
-  padding: 8px;
-  text-align: left;
-  font-size: x-large;
-  font-family: Jura;
-  font-weight: 900;
-  background-color: #132b2c;
-  color: white;
-  border-color: black;
+    
+    padding: 8px;
+    text-align: left;
+    font-size: x-large;
+    font-family: Jura;
+    font-weight: 900;
+    background-color: #132b2c;
+    color: white;
+    border-color: black;
 }
 
 .table th {
-  background-color: #132b2d;
-  color: white;
+    background-color: #132b2d;
+    color: white;
 }
 
 .table a {
-  text-decoration: none;
-  color: rgb(33, 141, 255);
+    text-decoration: none;
+    color: rgb(33, 141, 255);
 }
-/* Rounded corners for the first column */
+    /* Rounded corners for the first column */
 .table td:first-child,
 .table th:first-child {
-  border-top-left-radius: 20px;
-  border-bottom-left-radius: 20px;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
 }
 
 /* Rounded corners for the last column */
 .table td:last-child,
 .table th:last-child {
-  border-top-right-radius: 20px;
-  border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
 }
 * {
-  box-sizing: border-box;
+box-sizing: border-box;
 }
 
+
+
+
 .profile-container {
-  display: flex;
+display: flex;
 }
 
 .sidebar {
-  flex: 1; /* Adjust the flex ratio as needed */
-  padding: 20px;
-  /* Add additional styling for the sidebar */
+flex: 1; /* Adjust the flex ratio as needed */
+padding: 20px;
+/* Add additional styling for the sidebar */
 }
 
 .main-content {
-  flex: 3; /* Adjust the flex ratio as needed */
-  padding: 40px;
-  /* Add additional styling for the main content */
+flex: 3; /* Adjust the flex ratio as needed */
+padding: 40px;
+/* Add additional styling for the main content */
 }
 
+
 input[type="text"] {
-  padding: 10px;
-  margin: 10px 0;
-  width: calc(100% - 40px); /* Full width minus padding */
-  /* Add additional styling for the input */
+padding: 10px;
+margin: 10px 0;
+width: calc(100% - 40px); /* Full width minus padding */
+/* Add additional styling for the input */
 }
 
 .friend-card {
-  display: inline-block; /* Display cards horizontally */
-  margin: 10px;
-  padding: 10px;
-  color: white;
-  background-color: #132b2c;
-  border: 2px solid black;
-  cursor: pointer;
+    display: inline-block; /* Display cards horizontally */
+    margin: 10px;
+    padding: 10px;
+    color: white;
+    background-color: #132b2c;
+    border: 2px solid black;
+    cursor: pointer;
 }
 
 .friend-card.selected {
-  /* color: white; */
-  background-color: #8b0000;
+/* color: white; */
+background-color: #8B0000;
 }
 
 .group-item {
-  margin: 5px 0;
-  padding: 5px;
-  border: 1px solid #ccc;
-  cursor: pointer;
+margin: 5px 0;
+padding: 5px;
+border: 1px solid #ccc;
+cursor: pointer;
 }
 
 .highlight {
-  background-color: #f0f0f0; /* Or any color that suits your design */
-  border-color: #007bff; /* Bootstrap primary color for example */
+background-color: #f0f0f0; /* Or any color that suits your design */
+border-color: #007bff; /* Bootstrap primary color for example */
 }
 
 .filename {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #stats {
-  font-family: Jura, sans-serif;
+    font-family: Jura, sans-serif;
 }
 #stats h2 {
-  color: #000000;
+color: #000000;
 }
 #stats table {
-  width: 100%;
-  border-collapse: collapse;
-  border-radius: 20px;
+width: 100%;
+border-collapse: collapse;
+border-radius: 20px;
 }
 
 #stats td {
-  border: 2px solid #000000;
-  padding: 8px;
-  text-align: center;
-  font-size: 24px;
+border: 2px solid #000000;
+padding: 8px;
+text-align: center;
+font-size: 24px;
 }
 #stats tr:nth-child(5n + 1) {
-  background-color: black;
-  color: white;
+background-color: black;
+color: white;
 }
 #stats tr:nth-child(5n + 1) td {
-  /* text-align: right; */
-  font-size: 28px;
+/* text-align: right; */
+font-size: 28px;
 }
 #stats tr:nth-child(5n + 1):hover {
-  background-color: #000000;
+background-color: #000000;
 }
 #stats tr:hover {
-  background-color: #ddd;
+background-color: #ddd;
 }
 
 #mapFrame {
-  border-radius: 10px;
+    border-radius: 10px;
 }

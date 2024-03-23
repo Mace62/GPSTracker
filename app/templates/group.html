@@ -1,7 +1,6 @@
 {% extends "base.html" %} {% block content %}
 <div class="container">
   <div class="row">
-    <!-- Select a Group Card -->
     <div class="col-md-6">
       <div class="card">
         <div class="card-body">
@@ -17,7 +16,6 @@
       </div>
     </div>
 
-    <!-- Create Group Card -->
     <div class="col-md-6">
       <div class="card">
         <div class="card-body">
@@ -42,10 +40,8 @@
               {% endfor %}
             </div>
 
-            <!-- Hidden field to store selected friend IDs -->
             {{ creation_form.selected_friends }}
 
-            <!-- Submit button -->
             <button type="submit" class="btn btn-primary mt-3">
               Create Group
             </button>
