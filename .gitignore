@@ -12,3 +12,4 @@ migrations
 .vscode/settings.json
 app/static/group
 **/*.pyc
+app/secret.py
