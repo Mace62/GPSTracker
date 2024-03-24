@@ -8,8 +8,9 @@
           <form id="group-selection-form">
             {{ selection_form.hidden_tag() }}
             <div class="form-group">
-              {{ selection_form.group.label }} {{
-              selection_form.group(class="form-control") }}
+              {{ selection_form.group.label }} {{ 
+                selection_form.group(class="form-control", id="group-select") }}
+
             </div>
           </form>
         </div>
@@ -42,7 +43,7 @@
 
             {{ creation_form.selected_friends }}
 
-            <button type="submit" class="btn btn-primary mt-3">
+            <button type="submit" class="btn btn-primary mt-3 btn btn-lg btn-block">
               Create Group
             </button>
           </form>
@@ -52,35 +53,5 @@
   </div>
 </div>
 
-<script>
-  document.getElementById("{{ selection_form.group.id }}").onchange =
-    function () {
-      var groupId = this.value;
-      // Check if the placeholder value (e.g., '') is selected
-      if (groupId === "") {
-        // Redirect to the base /group URL
-        window.location.href = "/group";
-      } else if (groupId) {
-        // Redirect to the specific group's page
-        window.location.href = "/viewgroup/" + groupId;
-      }
-    };
 
-  document.querySelectorAll(".friend-card").forEach((card) => {
-    card.addEventListener("click", function () {
-      this.classList.toggle("selected"); // Toggle 'selected' class on click
-      updateSelectedFriends(); // Update the hidden input with selected friend IDs
-    });
-  });
-
-  function updateSelectedFriends() {
-    // Collect IDs of all selected friends
-    const selectedIds = Array.from(
-      document.querySelectorAll(".friend-card.selected")
-    ).map((card) => card.dataset.id);
-    // Update the hidden input value
-    document.querySelector('input[name="selected_friends"]').value =
-      selectedIds.join(",");
-  }
-</script>
 {% endblock %}

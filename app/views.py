@@ -544,34 +544,28 @@ def send_friend_request(username):
     user_to_request = User.query.filter_by(
         username=username).first_or_404()
 
-    # Check if the user is trying to send a friend request to themselves
     if current_user.id == user_to_request.id:
-        flash("You cannot send a friend request to yourself.", "danger")
-        return redirect(url_for('profile', username=username))
+        return jsonify({'status': 'error', 'message': "You cannot send a friend request to yourself."}), 400
 
-    # Check if friend request exists or if they are already friends
     existing_request = FriendRequest.query.filter(
-        ((FriendRequest.sender_id == current_user.id) & (
-            FriendRequest.receiver_id == user_to_request.id)) |
+        ((FriendRequest.sender_id == current_user.id) & (FriendRequest.receiver_id == user_to_request.id)) |
         ((FriendRequest.receiver_id == current_user.id) &
          (FriendRequest.sender_id == user_to_request.id))
     ).first()
 
     if existing_request:
         if existing_request.status == 'pending':
-            flash("Friend request already sent.", "info")
+            return jsonify({'status': 'error', 'message': "Friend request already sent."}), 400
         elif existing_request.status == 'accepted':
-            flash("You are already friends.", "info")
+            return jsonify({'status': 'error', 'message': "You are already friends."}), 400
     else:
-        # If no existing request, create a new friend request
         new_request = FriendRequest(
-            sender_id=current_user.id, receiver_id=user_to_request.id,
-            status='pending')
+            sender_id=current_user.id, receiver_id=user_to_request.id, status='pending')
         db.session.add(new_request)
         db.session.commit()
-        flash(f"Friend request sent to {username}.", "success")
+        return jsonify({'status': 'success', 'message': 'Friend request sent.', 'newAction': url_for('cancel_friend_request', request_id=new_request.id)})
 
-    return redirect(url_for('profile', username=username))
+    return jsonify({'status': 'error', 'message': "An unexpected error occurred."}), 500
 
 
 @app.route('/deny_friend_request/<int:request_id>', methods=['POST'])
@@ -579,12 +573,16 @@ def send_friend_request(username):
 def deny_friend_request(request_id):
     request = FriendRequest.query.get_or_404(request_id)
     if request.receiver_id == current_user.id:
+        sender = User.query.get(request.sender_id)
+
         # Delete the friend request instead of changing its status
         db.session.delete(request)
         db.session.commit()
         flash('Friend request denied.', 'success')
+
     else:
         flash('Unauthorized action.', 'danger')
+
     return redirect(url_for('profile'))
 
 
@@ -602,6 +600,7 @@ def accept_friend_request(request_id):
         request.status = 'accepted'
         db.session.commit()
         flash('Friend request accepted.', 'success')
+
     else:
         flash('Unauthorized action.', 'danger')
 
@@ -623,29 +622,33 @@ def remove_friend(friend_id):
     ).first()
 
     if not friend_request:
-        flash("No friend connection found.", "danger")
-        return redirect(url_for('profile'))
+        # Return an error message in JSON format
+        return jsonify({'status': 'error', 'message': "No friend connection found."}), 400
 
     db.session.delete(friend_request)
-
     db.session.commit()
-    flash('Friend removed successfully.', 'success')
-    return redirect(url_for('profile'))
+
+    # Return a success message in JSON format
+    return jsonify({'status': 'success', 'message': 'Friend removed successfully.', 'friendId': friend_id})
 
 
 @app.route('/cancel_friend_request/<int:request_id>', methods=['POST'])
 @login_required
 def cancel_friend_request(request_id):
-    # query to check if the current user is the sender of the friend request
     friend_request = FriendRequest.query.get_or_404(request_id)
-    if (friend_request.sender_id == current_user.id
-            and friend_request.status == 'pending'):
+
+    if friend_request.sender_id == current_user.id and friend_request.status == 'pending':
+        user_to_cancel_with = User.query.get_or_404(
+            friend_request.receiver_id)
         db.session.delete(friend_request)
         db.session.commit()
-        flash('Friend request canceled.', 'success')
+        return jsonify({
+            'status': 'success',
+            'message': 'Friend request canceled.',
+            'newAction': url_for('send_friend_request', username=user_to_cancel_with.username)
+        })
     else:
-        flash('Unauthorized action or request not found.', 'danger')
-    return redirect(url_for('profile'))
+        return jsonify({'status': 'error', 'message': 'Unauthorized action or request not found.'}), 400
 
 
 def create_group(user_ids, group_name):
@@ -759,36 +762,38 @@ def group(group_id):
     if creation_form.validate_on_submit():
         # Parse form data to get selected friend IDs and include current userID
         group_user_ids = request.form.get('selected_friends').split(',')
-        group_user_ids.append(str(current_user.id))
-
-        # Extracted name of the group from the form
-        group_name = creation_form.group_name.data
-
-        # list of all user IDs (the current user and selected friends)
-        user_ids = [current_user.id] + \
-            [int(uid) for uid in group_user_ids if uid.isdigit()]
-
-        # Check if any user in the user_ids list has group with given name
-        existing_group = Group.query.join(GroupMember).filter(
-            Group.name == group_name,
-            GroupMember.user_id.in_(user_ids)).first()
-
-        if existing_group:
-            # If group exists, do not proceed with creating the new group
-            flash(
-                'A group with this name already exists within your selected \
-                    group of friends.', 'error')
+        if not group_user_ids or group_user_ids == ['']:
+            flash('You must select at least one friend to create a group.', 'error')
         else:
-            new_group = create_group(group_user_ids, group_name)
-            flash('Group created successfully.', 'success')
-            return redirect(url_for('group'))
+            group_user_ids.append(str(current_user.id))
+
+            # Extracted name of the group from the form
+            group_name = creation_form.group_name.data
+
+            # list of all user IDs (the current user and selected friends)
+            user_ids = [current_user.id] + \
+                [int(uid) for uid in group_user_ids if uid.isdigit()]
+
+            # Check if any user in the user_ids list has group with given name
+            existing_group = Group.query.join(GroupMember).filter(
+                Group.name == group_name,
+                GroupMember.user_id.in_(user_ids)).first()
+
+            if existing_group:
+                # If group exists, do not proceed with creating the new group
+                flash(
+                    'A group with this name already exists within your selected \
+                        group of friends.', 'error')
+            else:
+                new_group = create_group(group_user_ids, group_name)
+                flash('Group created successfully.', 'success')
+                return redirect(url_for('group'))
 
     friends_choices = get_friends_choices(current_user.id)
 
     if group_id is not None and group_id != '':
         selection_form.group.data = group_id
     else:
-        # Logic for rendering the default /group page...
         selection_form.group.data = ''
 
     if group_id:
@@ -831,14 +836,14 @@ def pmgs(pmg_id):
         # Extracted name of the group from the form
         pmg_name = creation_form.pmg_name.data
 
-        # Query to check if any user in user_ids list has group with given name
-        existing_group = None
+        existing_group = Group.query.join(PMG, Group.id == PMG.group_id).filter(
+            Group.name == pmg_name,
+            PMG.user_id == current_user.id).first()
 
         if existing_group:
             # If such group exists, do not proceed with creating the new group
-            flash(
-                'A group with this name already exists within your selected \
-                    group of friends.', 'error')
+            flash('A PMG with this name already exists.', 'error')
+
         else:
             # If the name is unique, proceed with group creation
             new_pmg_group = Group(name=pmg_name)

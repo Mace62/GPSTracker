@@ -17,24 +17,25 @@
       <div class="sidebar">
         <h2>Friend Requests</h2>
         {% if received_requests %}
-        {% for request in received_requests %}
-        <div class="mb-4">
-          <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <small class="text-muted">
-                {{ request.sender.username }}
-              </small>
-              <div>
-                <form action="{{ url_for('accept_friend_request', request_id=request.id) }}" method="post"
-                  class="d-inline">
-                  {{ form.csrf_token }}
-                  <button type="submit" class="btn btn-success">✔</button>
-                </form>
-                <form action="{{ url_for('deny_friend_request', request_id=request.id) }}" method="post"
-                  class="d-inline">
-                  {{ form.csrf_token }}
-                  <button type="submit" class="btn btn-danger">✘</button>
-                </form>
+          {% for request in received_requests %}
+          <div class="mb-4">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                  {{ request.sender.username }}
+                </small>
+                <div>
+                  <form action="{{ url_for('accept_friend_request', request_id=request.id) }}" 
+                  method="post" class="d-inline accept-request">
+                    {{ form.csrf_token }}
+                    <button type="submit" class="btn btn-success">✔</button>
+                  </form>
+                  <form action="{{ url_for('deny_friend_request', request_id=request.id) }}" 
+                  method="post" class="d-inline deny-request">
+                    {{ form.csrf_token }}
+                    <button type="submit" class="btn btn-danger">✘</button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -48,7 +49,7 @@
         {% if friends %}
 
         {% for friend in friends %}
-        <div class="mb-4">
+        <div class="mb-4" id="friend-{{ friend.id }}">
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
               <small class="text-muted">
@@ -56,12 +57,11 @@
               </small>
               <form action="{{ url_for('remove_friend', friend_id=friend.id) }}" method="post" class="d-inline">
                 {{ form.csrf_token }}
-                <button type="submit" class="btn btn-danger float-end">Remove Friend</button>
+                <button type="button" class="btn btn-danger remove-friend-btn" data-friend-id="{{ friend.id }}">Remove Friend</button>
               </form>
             </div>
           </div>
         </div>
-
         {% endfor %}
         {% else %}
         <p>Search for friends to add by typing their username into the search bar!</p>
@@ -84,37 +84,39 @@
         <div class="mb-4">
           <div class="card">
             <div class="card-header">
-              <small class="text-muted">{{ user.username }}</small>
-              {% if follow_status[user.id].status == 'pending_received' %}
-              <div class="d-flex">
-                <form action="{{ url_for('accept_friend_request', request_id=follow_status[user.id].request_id) }}"
-                  method="post" class="d-inline">
+                <small class="text-muted">{{ user.username }}</small>
+                {% if follow_status[user.id].status == 'pending_received' %}
+                    <div class="d-flex">
+                        <form action="{{ url_for('accept_friend_request', request_id=follow_status[user.id].request_id) }}" 
+                        method="post" class="d-inline accept-request">
+                            {{ form.csrf_token }}
+                            <button type="submit" class="btn btn-success me-1">Accept</button>
+                        </form>
+                        <form action="{{ url_for('deny_friend_request', request_id=follow_status[user.id].request_id) }}" 
+                        method="post" class="d-inline deny-request">
+                            {{ form.csrf_token }}
+                            <button type="submit" class="btn btn-danger">Deny</button>
+                        </form>
+                      </div>
+                  {% elif follow_status[user.id].status == 'pending' %}
+                        <form action="{{ url_for('cancel_friend_request', request_id=follow_status[user.id].request_id) }}" 
+                        method="post" class="ajax-cancel-request" data-request-id="{{ follow_status[user.id].request_id }}">
+                          {{ form.csrf_token }}
+                            <button type="submit" class="btn btn-secondary" >Sent Request</button>
+                        </form>
+                {% elif follow_status[user.id].status == 'accepted' %}
+                <form action="{{ url_for('remove_friend', friend_id=user.id) }}" 
+                method="post" class="d-inline" data-friend-id="{{ user.id }}" data-username="{{ user.username }}">
                   {{ form.csrf_token }}
-                  <button type="submit" class="btn btn-success me-1">Accept</button>
-                </form>
-                <form action="{{ url_for('deny_friend_request', request_id=follow_status[user.id].request_id) }}"
-                  method="post" class="d-inline">
+                        <button type="button" class="btn btn-danger remove-friend-btn" data-friend-id="{{ user.id }}">Remove Friend</button>
+                      </form>
+                {% else %}
+                <form action="{{ url_for('send_friend_request', username=user.username) }}" 
+                method="post" class="ajax-friend-request" data-username="{{ user.username }}">
                   {{ form.csrf_token }}
-                  <button type="submit" class="btn btn-danger">Deny</button>
-                </form>
-              </div>
-              {% elif follow_status[user.id].status == 'pending' %}
-              <form action="{{ url_for('cancel_friend_request', request_id=follow_status[user.id].request_id) }}"
-                method="post">
-                {{ form.csrf_token }}
-                <button type="submit" class="btn btn-secondary">Sent Request</button>
-              </form>
-              {% elif follow_status[user.id].status == 'accepted' %}
-              <form action="{{ url_for('remove_friend', friend_id=user.id) }}" method="post">
-                {{ form.csrf_token }}
-                <button type="submit" class="btn btn-danger">Remove Friend</button>
-              </form>
-              {% else %}
-              <form action="{{ url_for('send_friend_request', username=user.username) }}" method="post">
-                {{ form.csrf_token }}
-                <button type="submit" class="btn btn-primary">Add friend</button>
-              </form>
-              {% endif %}
+                        <button type="submit" class="btn btn-primary">Add friend</button>
+                      </form>
+                {% endif %}
             </div>
           </div>
         </div>
@@ -126,4 +128,15 @@
     </div>
   </div>
 </div>
+
+<div id="myModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p>Are you sure you want to remove this friend?</p>
+    <button id="confirmRemove" class="btn btn-danger">Remove</button>
+    <button id="cancelRemove" class="btn">Cancel</button>
+  </div>
+
+</div>
+
 {% endblock %}
