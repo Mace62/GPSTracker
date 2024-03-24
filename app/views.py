@@ -254,14 +254,15 @@ def payment():
 
 @app.route('/login_new_user')
 def login_new_user():
-    username = session.get('username')
     new_user_data = session.get('new_user')
     payment_option = session.get('payment_option')
 
     # Search by database to check if the user already exists
     existing_user = User.query.filter(
-        User.username == username
+        User.username == new_user_data['username']
     ).first()
+
+    # print(existing_user.username)
 
     # if the user exists and user hasn't paid (i.e. returning user)
     if existing_user and existing_user.has_paid is False:
