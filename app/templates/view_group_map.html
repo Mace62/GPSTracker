@@ -1,0 +1,38 @@
+{% extends "base.html" %} {% block content %} {%if not is_pmg%}
+<h1 class="filename" style="text-align: center">Group: {{ group_name }}</h1>
+<h1 style="text-align: center">SHARED JOURNEY</h1>
+{%else%}
+<h1 class="filename" style="text-align: center">PMG: {{ group_name }}</h1>
+<h1 style="text-align: center">ALL JOURNEYS</h1>
+{%endif%}
+
+<div id="loading" style="display: none">Generating map, please wait...</div>
+
+<iframe id="mapFrame" src="" style="width: 100%; height: 600px; display: none"></iframe>
+
+<script>
+  document.getElementById("loading").style.display = "block";
+
+  // Function to check if the map is ready
+  function checkGroupMapStatus() {
+    var xhr = new XMLHttpRequest(); // Declaring the xhr variable
+    xhr.open("GET", "/check_group_map_status/{{ group_id }}", true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        var response = JSON.parse(xhr.responseText);
+        if (response.map_ready) {
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("mapFrame").style.display = "block";
+          document.getElementById("mapFrame").src = "{{ map_url }}";
+        } else {
+          setTimeout(checkMapStatus, 4000); // Check again after 4 seconds
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  checkGroupMapStatus();
+</script>
+
+{% endblock %}

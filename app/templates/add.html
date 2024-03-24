@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 style="text-align: center;">ADD FILE TO PERSONAL MAPS GROUP</h1>
+<h2 style="text-align: center;">File: {{ filename }}</h2>
+<form action="{{ url_for('add', filename=filename) }}" method="post">
+  {{ selection_form.hidden_tag() }}
+  <div style="text-align: center;">
+    <label for="pmg">Select a PMG:</label>
+    <select name="pmg" id="pmg">
+      {% for group_id, group_name in selection_form.pmg.choices %}
+      <option value="{{ group_id }}">{{ group_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <br>
+  <div style="text-align: center;">
+    <input type="submit" class="btn btn-lg btn-block" value="Add" />
+  </div>
+</form>
+
+{% endblock %}
