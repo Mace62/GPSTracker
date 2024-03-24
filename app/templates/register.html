@@ -5,7 +5,6 @@
 {% block content %}
 
 <h1 class="card-title text-center" style="margin-top: 10px; margin-bottom: 40px;">Registration Page</h1>
-<!-- Display flashed messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
@@ -40,7 +39,7 @@
         <div class="input-group mb-3">
             {{ form.first_name(id="first_name", class="form-control", maxlength=50, placeholder="First Name") }}
             <div class="input-group-append">
-                <span class="input-group-text"><i class="fas fa-pen"></i></span> 
+                <span class="input-group-text"><i class="fas fa-pen"></i></span>
             </div>
         </div>
     </div>
@@ -58,7 +57,7 @@
         <div class="input-group mb-3">
             {{ form.password(id="password", class="form-control", placeholder="Password") }}
             <div class="input-group-append">
-                <span class="input-group-text"><i class="fas fa-lock"></i></span> 
+                <span class="input-group-text"><i class="fas fa-lock"></i></span>
             </div>
         </div>
     </div>
@@ -67,7 +66,7 @@
         <div class="input-group mb-3">
             {{ form.confirm(id="confirm", class="form-control", placeholder="Confirm Password") }}
             <div class="input-group-append">
-                <span class="input-group-text"><i class="fas fa-lock"></i></span> 
+                <span class="input-group-text"><i class="fas fa-lock"></i></span>
             </div>
         </div>
     </div>

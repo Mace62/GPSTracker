@@ -1,47 +1,57 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h2>Select a Group To View</h2>
+          <form id="group-selection-form">
+            {{ selection_form.hidden_tag() }}
+            <div class="form-group">
+              {{ selection_form.group.label }} {{ 
+                selection_form.group(class="form-control", id="group-select") }}
 
-{% block content %}
-
-<h1 style="text-align: center;">GROUPS</h1>
-{% if num_groups > 0 %}
-<form id="group-selection-form">
-    {{ selection_form.hidden_tag() }}
-    <div class="form-group" style="text-align: center;">
-        {{ selection_form.group.label }}
-        {{ selection_form.group(class="form-control") }}
-    </div>
-</form>
-{% endif %}
-
-<br>
-<form method="post">
-    {{ creation_form.hidden_tag() }}
-    <div class="form-group" style="text-align: center;">
-        <label for="group_name">Group Name</label>
-        {{ creation_form.group_name(class="form-control") }}
-        {% if creation_form.group_name.errors %}
-            {% for error in creation_form.group_name.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        {% endif %}
-    </div>
-
-    <div id="friends-cards" class="mt-3">
-        <h2>Select Friends:</h2>
-        {% for friend_id, friend_name in friends_choices %}
-        <div class="friend-card" data-id="{{ friend_id }}">
-            {{ friend_name }}
+            </div>
+          </form>
         </div>
-        {% endfor %}
+      </div>
     </div>
 
-    <!-- Hidden field to store selected friend IDs -->
-    {{ creation_form.selected_friends }}
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h2>Create a Group</h2>
+          <form method="post">
+            {{ creation_form.hidden_tag() }}
+            <div class="form-group">
+              <label for="group_name">Group Name</label>
+              {{ creation_form.group_name(class="form-control") }} {% if
+              creation_form.group_name.errors %} {% for error in
+              creation_form.group_name.errors %}
+              <span style="color: red">{{ error }}</span>
+              {% endfor %} {% endif %}
+            </div>
 
-    <!-- Submit button -->
-    <div style="text-align: center;">
-    <button type="submit" class="btn btn-lg btn-block">Create Group</button>
+            <div id="friends-cards" class="mt-3">
+              <h4>Select Friends:</h4>
+              {% for friend_id, friend_name in friends_choices %}
+              <div class="friend-card" data-id="{{ friend_id }}">
+                {{ friend_name }}
+              </div>
+              {% endfor %}
+            </div>
+
+            {{ creation_form.selected_friends }}
+
+            <button type="submit" class="btn btn-primary mt-3 btn btn-lg btn-block">
+              Create Group
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
-</form>
+  </div>
+</div>
+
 
 {% endblock %}

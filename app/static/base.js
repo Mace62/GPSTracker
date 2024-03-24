@@ -3,18 +3,20 @@ console.log("JavaScript is linked!");
 
 
 
-
 document.addEventListener('DOMContentLoaded', function () {
-    var selectionFormElement = document.getElementById('{{ selection_form.group.id }}');
+    // Target the select element by the id
+    var selectionFormElement = document.getElementById('group-select');
     if (selectionFormElement) {
-        selectionFormElement.onchange = function () {
+        selectionFormElement.addEventListener('change', function () {
             var groupId = this.value;
-            if (groupId === '') {
-                window.location.href = '/group';
-            } else if (groupId) {
+            console.log("Selected groupId:", groupId); // Helpful for debugging
+
+            if (groupId !== '') {
                 window.location.href = '/viewgroup/' + groupId;
+            } else {
+                window.location.href = '/group';
             }
-        };
+        });
     }
 
     document.querySelectorAll('.friend-card').forEach(card => {
@@ -148,3 +150,27 @@ $(document).ready(function () {
 });
 
 
+document.addEventListener('DOMContentLoaded', function () {
+    // Select all buttons
+    var buttons = document.querySelectorAll('button');
+
+    // Function to add the hover-effect class
+    function addHoverEffect() {
+        buttons.forEach(function (button) {
+            button.classList.add('hover-effect');
+        });
+    }
+
+    // Function to remove the hover-effect class
+    function removeHoverEffect() {
+        buttons.forEach(function (button) {
+            button.classList.remove('hover-effect');
+        });
+    }
+
+    // Attach event listeners to each button
+    buttons.forEach(function (button) {
+        button.addEventListener('mouseenter', addHoverEffect);
+        button.addEventListener('mouseleave', removeHoverEffect);
+    });
+});

@@ -1,182 +1,190 @@
-        
-            body,
-            html {
-                font-family: 'Jura', sans-serif; /* Change font family to Jura */
-                background-color: #bdb1a0;
-                margin: 0;
-                padding: 0;
-                height: 100%;
-            }
-        
-            .card {
-                max-width: 25rem;
-                margin: auto;
-                margin-top: 50px;
-                background-color: #bdb1a0;
-                border: none;
-            }
-        
-            .navbar {
-                background-color: transparent;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                padding-top: 10px;
-                padding-bottom: 10px;
-                font-family: 'Jura', sans-serif; /* Change font family to Jura */
-                border-bottom: 10px solid black; /* Set bottom border to black */
-            }
-        
-            .navbar-brand {
-                color: black; /* Set navbar title color to black */
-            }
-        
-            .navbar-brand img {
-                height: 40px;
-                width: auto;
-            }
-        
-            .navbar-brand:hover {
-                opacity: 0.8;
-            }
-        
-            .navbar-nav .nav-link {
-                color: black;
-            }
-        
-            .header {
-                padding-top: 50px;
-                padding-bottom: 30px;
-                text-align: center;
-            }
-        
-            .header h1 {
-                font-size: 2.5rem;
-                font-weight: 700;
-                text-align: center;
-                color: #343a40;
-            }
-        
-            .content-container {
-                padding: 30px;
-                border-radius: 8px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-        
-            .alert {
-                border-radius: 8px;
-            }
-        
-            .container {
-                min-height: 100%;
-                padding-bottom: 0; /* Remove padding from the bottom */
-                box-sizing: border-box;
-            }
 
-                /* Styling for buttons */
-            .btn {
-                background-color: #132b2c;
-                border: 2px solid black;
-                color: white;
-                padding: 8px 16px;
-                border-radius: 4px;
-                transition: background-color 0.3s, border-color 0.3s, color 0.3s;
-            }
+body,
+html {
+    font-family: 'Jura', sans-serif; /* Change font family to Jura */
+    background-color: #bdb1a0;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
 
-            /* Styling for btn-danger buttons */
-            .btn-danger {
-                background-color: #8B0000; /* Keeping btn-danger buttons red */
-            }
-            .btn-secondary {
-                background-color: #5e5e5e; /* Keeping btn-danger buttons red */
-            }
+.card {
+    max-width: 25rem;
+    margin: auto;
+    margin-top: 50px;
+    background-color: #bdb1a0;
+    border: none;
+}
 
-            /* Hover effect for buttons */
-            .btn:hover {
-                background-color: black;
-                border-color: #132b2c;
-                color: white;
-            }
-        
+.navbar {
+    background-color: transparent;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-family: 'Jura', sans-serif; /* Change font family to Jura */
+    border-bottom: 10px solid black; /* Set bottom border to black */
+}
 
-            .table {
-            width: 100%;
-            margin: auto;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            border-collapse: collapse;
-            border-radius:6px;
-            }
+.navbar-brand {
+    color: black; /* Set navbar title color to black */
+}
 
-            .table tr {
-            border: 4px solid #B4AFA2; /* Add a border to each row */
-            border-radius:20px; /* Add rounded edges to each row */
-            }
+.navbar-brand img {
+    height: 40px;
+    width: auto;
+}
 
-            .table th,
-            .table td {
-                
-                padding: 8px;
-                text-align: left;
-                font-size: x-large;
-                font-family: Jura;
-                font-weight: 900;
-                background-color: #132b2c;
-                color: white;
-                border-color: black;
-            }
+.navbar-brand:hover {
+    opacity: 0.8;
+}
 
-            .table th {
-                background-color: #132b2d;
-                color: white;
-            }
+.navbar-nav .nav-link {
+    color: black;
+}
 
-            .table a {
-                text-decoration: none;
-                color: rgb(33, 141, 255);
-            }
-                /* Rounded corners for the first column */
-            .table td:first-child,
-            .table th:first-child {
-                border-top-left-radius: 20px;
-                border-bottom-left-radius: 20px;
-            }
+.header {
+    padding-top: 50px;
+    padding-bottom: 30px;
+    text-align: center;
+}
 
-            /* Rounded corners for the last column */
-            .table td:last-child,
-            .table th:last-child {
-                border-top-right-radius: 20px;
-                border-bottom-right-radius: 20px;
-            }
-* {
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    color: #343a40;
+}
+
+.content-container {
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.alert {
+    border-radius: 8px;
+}
+
+.container {
+    min-height: 100%;
+    padding-bottom: 0; /* Remove padding from the bottom */
     box-sizing: border-box;
-  }
-  
-  
+}
 
-  
-  .profile-container {
-    display: flex;
-  }
-  
-  .sidebar {
-    flex: 1; /* Adjust the flex ratio as needed */
-    padding: 20px;
-    /* Add additional styling for the sidebar */
-  }
-  
-  .main-content {
-    flex: 3; /* Adjust the flex ratio as needed */
-    padding: 40px;
-    /* Add additional styling for the main content */
-  }
-  
-  
-  input[type="text"] {
-    padding: 10px;
-    margin: 10px 0;
-    width: calc(100% - 40px); /* Full width minus padding */
-    /* Add additional styling for the input */
-  }
+    /* Styling for buttons */
+.btn {
+    background-color: #132b2c;
+    border: 2px solid black;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
 
+/* Styling for btn-danger buttons */
+.btn-danger {
+    background-color: #8B0000; /* Keeping btn-danger buttons red */
+}
+
+.btn-primary{
+
+    background-color: #024c0f; /* Keeping btn-danger buttons red */
+}
+
+.btn-secondary{
+    background-color: #5b5b5b; /* Keeping btn-danger buttons red */
+
+}
+
+/* Hover effect for buttons */
+.btn:hover {
+    background-color: black;
+    border-color: #132b2c;
+    color: white;
+    transform: scale(1.1); /* Scale the button to 110% of its size */
+    transition: transform 0.3s, background-color 0.3s, border-color 0.3s, color 0.3s; /* Include transform in the transition */
+}
+
+
+.table {
+width: 100%;
+margin: auto;
+margin-top: 20px;
+margin-bottom: 20px;
+border-collapse: collapse;
+border-radius:6px;
+}
+
+.table tr {
+border: 4px solid #B4AFA2; /* Add a border to each row */
+border-radius:20px; /* Add rounded edges to each row */
+}
+
+.table th,
+.table td {
+    
+    padding: 8px;
+    text-align: left;
+    font-size: x-large;
+    font-family: Jura;
+    font-weight: 900;
+    background-color: #132b2c;
+    color: white;
+    border-color: black;
+}
+
+.table th {
+    background-color: #132b2d;
+    color: white;
+}
+
+.table a {
+    text-decoration: none;
+    color: rgb(33, 141, 255);
+}
+    /* Rounded corners for the first column */
+.table td:first-child,
+.table th:first-child {
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+
+/* Rounded corners for the last column */
+.table td:last-child,
+.table th:last-child {
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+}
+* {
+box-sizing: border-box;
+}
+
+
+
+
+.profile-container {
+display: flex;
+}
+
+.sidebar {
+flex: 1; /* Adjust the flex ratio as needed */
+padding: 20px;
+/* Add additional styling for the sidebar */
+}
+
+.main-content {
+flex: 3; /* Adjust the flex ratio as needed */
+padding: 40px;
+/* Add additional styling for the main content */
+}
+
+
+input[type="text"] {
+padding: 10px;
+margin: 10px 0;
+width: calc(100% - 40px); /* Full width minus padding */
+/* Add additional styling for the input */
+}
 
 .friend-card {
     display: inline-block; /* Display cards horizontally */
@@ -189,136 +197,112 @@
 }
 
 .friend-card.selected {
-    /* color: white; */
-    background-color: #8B0000;
+/* color: white; */
+background-color: #8B0000;
 }
 
-
 .group-item {
-  margin: 5px 0;
-  padding: 5px;
-  border: 1px solid #ccc;
-  cursor: pointer;
+margin: 5px 0;
+padding: 5px;
+border: 1px solid #ccc;
+cursor: pointer;
 }
 
 .highlight {
-  background-color: #f0f0f0; /* Or any color that suits your design */
-  border-color: #007bff; /* Bootstrap primary color for example */
+background-color: #f0f0f0; /* Or any color that suits your design */
+border-color: #007bff; /* Bootstrap primary color for example */
 }
 
 
 
 /* The Modal (background) */
 .modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1; /* Sit on top */
-    left: 0;
-    top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgb(0,0,0); /* Fallback color */
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-  }
-  
-  /* Modal Content/Box */
-  .modal-content {
-    background-color: #fefefe;
-    margin: 15% auto; /* 15% from the top and centered */
-    padding: 20px;
-    border: 1px solid #888;
-    width: 30%; /* Could be more or less, depending on screen size */
-  }
-  
-  /* The Close Button */
-  .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-  }
-  
-  .close:hover,
-  .close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-
-
-
-
-/* view_map.html */
-
-h1 {
-    font-family: "Jura", sans-serif;
-    font-weight: bold;
-    text-align: center;
-  }
-  #mapFrame {
-    border-radius: 10px;
-  }
-  h2 {
-    font-family: "Jura", sans-serif;
-    font-weight: bold;
-    margin-top: 40px;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  h3 {
-    font-family: "Jura", sans-serif;
-    font-weight: bold;
-    margin-top: 50px;
-    text-align: center;
-  }
-  h4 {
-    font-family: "Jura", sans-serif;
-    font-weight: bold;
-    margin-top: 50px;
-    text-align: center;
-    color: #36a2eb;
-  }
-
-  #stats {
-    font-family: Jura, sans-serif;
-  }
-  #stats h2 {
-    color: #000000;
-  }
-  #stats table {
-    width: 100%;
-    border-collapse: collapse;
-    border-radius: 20px;
-  }
-
-  #stats td {
-    border: 2px solid #000000;
-    padding: 8px;
-    text-align: center;
-    font-size: 24px;
-  }
-  #stats tr:nth-child(5n + 1) {
-    background-color: black;
-    color: white;
-  }
-  #stats tr:nth-child(5n + 1) td {
-    /* text-align: right; */
-    font-size: 28px;
-  }
-  #stats tr:nth-child(5n + 1):hover {
-    background-color: #000000;
-  }
-  #stats tr:hover {
-    background-color: #ddd;
-  }
-
-
-  .card {
-    border: none; 
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 }
 
-.form-group {
-    margin-bottom: 20px;
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 30%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+
+.filename {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#stats {
+    font-family: Jura, sans-serif;
+}
+#stats h2 {
+color: #000000;
+}
+#stats table {
+width: 100%;
+border-collapse: collapse;
+border-radius: 20px;
+}
+
+#stats td {
+border: 2px solid #000000;
+padding: 8px;
+text-align: center;
+font-size: 24px;
+}
+#stats tr:nth-child(5n + 1) {
+background-color: black;
+color: white;
+}
+#stats tr:nth-child(5n + 1) td {
+/* text-align: right; */
+font-size: 28px;
+}
+#stats tr:nth-child(5n + 1):hover {
+background-color: #000000;
+}
+#stats tr:hover {
+background-color: #ddd;
+}
+
+#mapFrame {
+    border-radius: 10px;
+}
+
+
+    .card {
+      border: none; 
+  }
+  
+  .form-group {
+      margin-bottom: 20px;
 }
