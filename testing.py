@@ -894,7 +894,7 @@ class TestFriendRequest(unittest.TestCase):
         request_id = FriendRequest.query.filter_by(
             sender_id=1, receiver_id=2).first().id
         response = self.client.post(f'/accept_friend_request/{request_id}')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
         # Verify the friend request status is now 'accepted'
         friend_request = FriendRequest.query.get(request_id)
@@ -914,7 +914,7 @@ class TestFriendRequest(unittest.TestCase):
             sender_id=1, receiver_id=2).first().id
         response = self.client.post(f'/deny_friend_request/{request_id}')
         # assuming redirect on success
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
         # Verify the friend request has been removed from the database
         denied_request = FriendRequest.query.get(request_id)
@@ -995,7 +995,7 @@ class CreateGroup(unittest.TestCase):
         request_id = FriendRequest.query.filter_by(
             sender_id=1, receiver_id=2).first().id
         response = self.client.post(f'/accept_friend_request/{request_id}')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
         # Verify the friend request status is now 'accepted'
         friend_request = FriendRequest.query.get(request_id)

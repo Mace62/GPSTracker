@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (groupId === '') {
                 window.location.href = '/group';
             } else if (groupId) {
-                window.location.href = '/group/' + groupId;
+                window.location.href = '/viewgroup/' + groupId;
             }
         };
     }
@@ -106,7 +106,6 @@ $(document).ready(function () {
                     url: url,
                     // Make sure to include CSRF token if needed
                     success: function (response) {
-                        alert('Friend removed successfully.');
                         $('#myModal').hide(); // Hide the modal on success
                         // Optionally, update the UI to reflect the removal
                         $('div#friend-' + friendIdToRemove).remove(); // Remove the friend from the UI

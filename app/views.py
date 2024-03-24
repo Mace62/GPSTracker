@@ -17,8 +17,6 @@ from geopy.distance import geodesic
 
 
 
-
-
 # Setting global secret key for Stripe API
 stripe.api_key = "sk_test_51OlhekAu65yEau3hdrHvRwjs8vb8GM2NJnjLuJQYuGHeqgi5nYseoo8D2jIE4qKCvs7EPhzQIOJfQKQUej6SYD0600PGbY7CmA"
 
@@ -531,12 +529,16 @@ def send_friend_request(username):
 def deny_friend_request(request_id):
     request = models.FriendRequest.query.get_or_404(request_id)
     if request.receiver_id == current_user.id:
+        sender = models.User.query.get(request.sender_id)
+
         # Delete the friend request instead of changing its status
         db.session.delete(request)
         db.session.commit()
         flash('Friend request denied.', 'success')
+
     else:
         flash('Unauthorized action.', 'danger')
+
     return redirect(url_for('profile'))
 
 
@@ -554,34 +556,13 @@ def accept_friend_request(request_id):
         request.status = 'accepted'
         db.session.commit()
         flash('Friend request accepted.', 'success')
+
     else:
         flash('Unauthorized action.', 'danger')
 
     return redirect(url_for('profile'))
 
 
-# @app.route('/remove_friend/<int:friend_id>', methods=['POST'])
-# @login_required
-# def remove_friend(friend_id):
-#     # Assuming 'friend_id' is the user ID of the friend to be removed
-
-#     # Check if the current user has a friend request with the given friend_id that's accepted
-#     friend_request = models.FriendRequest.query.filter(
-#         models.FriendRequest.status == 'accepted',
-#         ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == friend_id)) |
-#         ((models.FriendRequest.sender_id == friend_id) &
-#          (models.FriendRequest.receiver_id == current_user.id))
-#     ).first()
-
-#     if not friend_request:
-#         flash("No friend connection found.", "danger")
-#         return redirect(url_for('profile'))
-
-#     db.session.delete(friend_request)
-
-#     db.session.commit()
-#     flash('Friend removed successfully.', 'success')
-#     return redirect(url_for('profile'))
 
 @app.route('/remove_friend/<int:friend_id>', methods=['POST'])
 @login_required
