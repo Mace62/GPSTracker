@@ -541,16 +541,16 @@ def profile():
 @app.route('/send_friend_request/<username>', methods=['POST'])
 @login_required
 def send_friend_request(username):
-    user_to_request = models.User.query.filter_by(
+    user_to_request = User.query.filter_by(
         username=username).first_or_404()
 
     if current_user.id == user_to_request.id:
         return jsonify({'status': 'error', 'message': "You cannot send a friend request to yourself."}), 400
 
-    existing_request = models.FriendRequest.query.filter(
-        ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == user_to_request.id)) |
-        ((models.FriendRequest.receiver_id == current_user.id) &
-         (models.FriendRequest.sender_id == user_to_request.id))
+    existing_request = FriendRequest.query.filter(
+        ((FriendRequest.sender_id == current_user.id) & (FriendRequest.receiver_id == user_to_request.id)) |
+        ((FriendRequest.receiver_id == current_user.id) &
+         (FriendRequest.sender_id == user_to_request.id))
     ).first()
 
     if existing_request:
@@ -559,7 +559,7 @@ def send_friend_request(username):
         elif existing_request.status == 'accepted':
             return jsonify({'status': 'error', 'message': "You are already friends."}), 400
     else:
-        new_request = models.FriendRequest(
+        new_request = FriendRequest(
             sender_id=current_user.id, receiver_id=user_to_request.id, status='pending')
         db.session.add(new_request)
         db.session.commit()
@@ -573,7 +573,7 @@ def send_friend_request(username):
 def deny_friend_request(request_id):
     request = FriendRequest.query.get_or_404(request_id)
     if request.receiver_id == current_user.id:
-        sender = models.User.query.get(request.sender_id)
+        sender = User.query.get(request.sender_id)
 
         # Delete the friend request instead of changing its status
         db.session.delete(request)
@@ -635,10 +635,10 @@ def remove_friend(friend_id):
 @app.route('/cancel_friend_request/<int:request_id>', methods=['POST'])
 @login_required
 def cancel_friend_request(request_id):
-    friend_request = models.FriendRequest.query.get_or_404(request_id)
+    friend_request = FriendRequest.query.get_or_404(request_id)
 
     if friend_request.sender_id == current_user.id and friend_request.status == 'pending':
-        user_to_cancel_with = models.User.query.get_or_404(
+        user_to_cancel_with = User.query.get_or_404(
             friend_request.receiver_id)
         db.session.delete(friend_request)
         db.session.commit()
