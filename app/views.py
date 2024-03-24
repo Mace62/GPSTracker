@@ -19,7 +19,7 @@ from geopy.distance import geodesic
 
 
 stripe.api_key = "sk_test_51OlhekAu65yEau3hdrHvRwjs8vb8GM2NJnjLuJQYuGHeqgi5n"\
-                    + "Yseoo8D2jIE4qKCvs7EPhzQIOJfQKQUej6SYD0600PGbY7CmA"
+    + "Yseoo8D2jIE4qKCvs7EPhzQIOJfQKQUej6SYD0600PGbY7CmA"
 
 # Setting dict for subscription products and their respective product ID's
 SUBSCRIPTION_PRODUCTS_ID = {
@@ -152,9 +152,9 @@ def cancel_subscription():
             return (redirect(url_for("homepage")))
 
         else:
-            return(redirect(url_for("cancel_subscription")))
+            return (redirect(url_for("cancel_subscription")))
 
-    return(render_template("cancel_subscription.html", form=form))
+    return (render_template("cancel_subscription.html", form=form))
 
 
 @app.route('/new_subscription', methods=['GET', 'POST'])
@@ -488,7 +488,7 @@ def perform_user_search(query, current_user):
                 received_request = FriendRequest.query.filter_by(
                     sender_id=user.id, receiver_id=current_user.id).first()
                 if received_request:
-                    if(received_request.status == "pending"):
+                    if (received_request.status == "pending"):
                         follow_status[user.id] = {
                             'status': received_request.status + "_received",
                             'request_id': received_request.id}
@@ -723,7 +723,8 @@ def add(filename):
             if not (SharedGPXFile.query.filter_by(file_id=gpx_file.id,
                                                   group_id=selected_group_id)
                     .first()):
-                new_share = SharedGPXFile(file_id=gpx_file.id, group_id=selected_group_id)
+                new_share = SharedGPXFile(
+                    file_id=gpx_file.id, group_id=selected_group_id)
                 db.session.add(new_share)
                 db.session.commit()
                 flash('File Added successfully.', 'success')
@@ -1138,19 +1139,20 @@ def generate_group_map(group_id):
         GPXFileData.id.in_([file_id.file_id for file_id in file_ids])).all()
 
     run_map = folium.Map(
-            location=[0, 0], tiles=None, zoom_start=12)
-        
+        location=[0, 0], tiles=None, zoom_start=12)
+
     # add Openstreetmap layer
     folium.TileLayer('openstreetmap', name='OpenStreet Map').add_to(run_map)
+    # add feature group for Waypoints
+    fg_waypoints = folium.FeatureGroup(name='Waypoints').add_to(run_map)
 
     colour_counter = 0
     for gpx_file in gpx_files:
-        waypoints = GPXWaypoint.query.filter(
-            GPXWaypoint.file_id.in_(
-                [gpx_file.id for gpx_file in gpx_files])).all()
+        waypoints = GPXWaypoint.query.filter_by(file_id=gpx_file.id).all()
         tracks = GPXTrack.query.filter_by(file_id=gpx_file.id).all()
         track_points = GPXTrackPoint.query.join(GPXTrack).filter(
             GPXTrack.file_id == gpx_file.id).all()
+        owner_name = User.query.get(gpx_file.user_id).username
 
         # Grab lat and long coords to initialise the map
         # Set default coordinates if no track points or waypoints are available
@@ -1167,7 +1169,16 @@ def generate_group_map(group_id):
 
         colors = ["blue", "red", "green", "orange", "purple", "yellow", "pink",
                   "brown", "gray"]
-        
+
+        if waypoints:
+
+            # iterate over waypoints and create a marker for each
+            for waypoint in waypoints:
+                folium.Marker(
+                    location=[waypoint.latitude, waypoint.longitude],
+                    tooltip=(owner_name+": "+waypoint.name),
+                    icon=folium.Icon(color='red')
+                ).add_to(fg_waypoints)
         # create a feature group for tracks
         if tracks:
             for i, track in enumerate(tracks):
@@ -1179,14 +1190,18 @@ def generate_group_map(group_id):
                 # create a list of coordinates for the trackpoints
                 track_coords = [[point.latitude, point.longitude]
                                 for point in track_points]
-                owner_name = User.query.get(gpx_file.user_id).username
                 # create a polyline with a different color for each track
                 folium.PolyLine(track_coords,
                                 color=colors[colour_counter % len(colors)],
                                 weight=4.5, opacity=1,
-                                tooltip=owner_name).add_to(fg_tracks)
+                                tooltip=(owner_name+": "+track.name)).add_to(fg_tracks)
 
             colour_counter += 1
+            waypoints = None
+            tracks = None
+
+    run_map.add_child(folium.LayerControl(
+        position='topright', collapsed=False, autoZIndex=True))
 
     map_file = f'{group_id}_map.html'
     run_map.save(os.path.join(group_folder, map_file))
