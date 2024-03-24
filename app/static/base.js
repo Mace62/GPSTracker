@@ -83,30 +83,69 @@ $(document).ready(function () {
                 alert(response.message);
             }
         });
-    }
-    $('body').on('submit', 'form.ajax-deny-request', function (e) {
-        e.preventDefault();
-        var form = $(this);
-        var url = form.attr('action');  // Ensure this URL is correctly set to your Flask route for denying requests
-        var data = form.serialize();
 
-        $.ajax({
-            type: 'POST',
-            url: url,  // This should correctly point to '/deny_friend_request_ajax/<request_id>'
-            data: data,
-            success: function (response) {
-                if (response.status === 'success') {
-                    $('div.card[data-user-id="' + response.deniedUserId + '"]').remove();
-                    $('form[data-user-id="' + response.deniedUserId + '"]')
-                        .removeClass('ajax-cancel-request').addClass('ajax-friend-request')
-                        .attr('action', '/send_friend_request/' + response.deniedUserId)  // Adjust if needed based on Flask `url_for`
-                        .html('<button type="submit" class="btn btn-primary">Add Friend</button>');
-                }
-            },
-            error: function (xhr) {
-                console.error("Error: " + xhr.responseText);
+
+    }
+    $(document).ready(function () {
+
+        var friendIdToRemove = null; // Variable to store the friend ID to remove
+
+        // When a "Remove Friend" button is clicked, show the modal and store the friend ID
+        $('body').on('click', '.remove-friend-btn', function () {
+            friendIdToRemove = $(this).data('friend-id'); // Store the friend ID
+            $('#myModal').show(); // Show the modal
+        });
+
+        // When the "Confirm Remove" button in the modal is clicked
+        $('#confirmRemove').off('click').on('click', function () {
+            if (friendIdToRemove !== null) {
+                var url = '/remove_friend/' + friendIdToRemove; // Construct the URL for removal
+                // Perform the AJAX request to remove the friend
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    // Make sure to include CSRF token if needed
+                    success: function (response) {
+                        alert('Friend removed successfully.');
+                        $('#myModal').hide(); // Hide the modal on success
+                        // Optionally, update the UI to reflect the removal
+                        $('div#friend-' + friendIdToRemove).remove(); // Remove the friend from the UI
+                        // Reset any related forms in the search results back to "Add Friend"
+                        resetFormToFriendState(friendIdToRemove);
+                        friendIdToRemove = null; // Reset the stored friend ID
+                    },
+                    error: function (xhr) {
+                        var response = JSON.parse(xhr.responseText);
+                        alert(response.message);
+                        $('#myModal').hide(); // Optionally hide the modal on error
+                    }
+                });
             }
+        });
+
+        // Handle the "Cancel" button click in the modal
+        $('#cancelRemove').click(function () {
+            $('#myModal').hide(); // Hide the modal
+        });
+
+        // Handle clicking on the modal's close button
+        $('.close').click(function () {
+            $('#myModal').hide();
         });
     });
 
+    // Function to reset any related forms in the search results back to "Add Friend"
+    function resetFormToFriendState(friendId) {
+        $('form[data-friend-id="' + friendId + '"]').each(function () {
+            var $form = $(this);
+            var username = $form.data('username');
+            // Reset the form to "Add Friend" state
+            $form.removeClass('ajax-cancel-request').addClass('ajax-friend-request');
+            $form.attr('action', '/send_friend_request/' + username);
+            $form.html('<button type="submit" class="btn btn-primary">Add Friend</button>');
+        });
+    }
+
 });
+
+

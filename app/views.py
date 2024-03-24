@@ -497,6 +497,8 @@ def profile():
     return render_template('profile.html', form=form, query=query, results=results, user=current_user, follow_status=follow_status, received_requests=received_requests, friends=friends,subscription_type=subscription_type, title='Profile')
 
 
+
+
 @app.route('/send_friend_request/<username>', methods=['POST'])
 @login_required
 def send_friend_request(username):
@@ -524,35 +526,19 @@ def send_friend_request(username):
     return jsonify({'status': 'error', 'message': "An unexpected error occurred."}), 500
 
 
-# @app.route('/deny_friend_request/<int:request_id>', methods=['POST'])
-# @login_required
-# def deny_friend_request(request_id):
-#     request = models.FriendRequest.query.get_or_404(request_id)
-#     if request.receiver_id == current_user.id:
-#         # Delete the friend request instead of changing its status
-#         db.session.delete(request)
-#         db.session.commit()
-#         flash('Friend request denied.', 'success')
-#     else:
-#         flash('Unauthorized action.', 'danger')
-#     return redirect(url_for('profile'))
-
-
-@app.route('/deny_friend_request_ajax/<int:request_id>', methods=['POST'])
+@app.route('/deny_friend_request/<int:request_id>', methods=['POST'])
 @login_required
-def deny_friend_request_ajax(request_id):
+def deny_friend_request(request_id):
     request = models.FriendRequest.query.get_or_404(request_id)
     if request.receiver_id == current_user.id:
+        # Delete the friend request instead of changing its status
         db.session.delete(request)
         db.session.commit()
-        # Construct a response indicating success and providing necessary information for UI update
-        return jsonify({
-            'status': 'success',
-            'message': 'Friend request denied.',
-            'deniedUserId': request.sender_id  # ID of the user whose request was denied
-        })
+        flash('Friend request denied.', 'success')
     else:
-        return jsonify({'status': 'error', 'message': 'Unauthorized action.'}), 400
+        flash('Unauthorized action.', 'danger')
+    return redirect(url_for('profile'))
+
 
 @app.route('/accept_friend_request/<int:request_id>', methods=['POST'])
 @login_required
@@ -574,6 +560,29 @@ def accept_friend_request(request_id):
     return redirect(url_for('profile'))
 
 
+# @app.route('/remove_friend/<int:friend_id>', methods=['POST'])
+# @login_required
+# def remove_friend(friend_id):
+#     # Assuming 'friend_id' is the user ID of the friend to be removed
+
+#     # Check if the current user has a friend request with the given friend_id that's accepted
+#     friend_request = models.FriendRequest.query.filter(
+#         models.FriendRequest.status == 'accepted',
+#         ((models.FriendRequest.sender_id == current_user.id) & (models.FriendRequest.receiver_id == friend_id)) |
+#         ((models.FriendRequest.sender_id == friend_id) &
+#          (models.FriendRequest.receiver_id == current_user.id))
+#     ).first()
+
+#     if not friend_request:
+#         flash("No friend connection found.", "danger")
+#         return redirect(url_for('profile'))
+
+#     db.session.delete(friend_request)
+
+#     db.session.commit()
+#     flash('Friend removed successfully.', 'success')
+#     return redirect(url_for('profile'))
+
 @app.route('/remove_friend/<int:friend_id>', methods=['POST'])
 @login_required
 def remove_friend(friend_id):
@@ -588,14 +597,14 @@ def remove_friend(friend_id):
     ).first()
 
     if not friend_request:
-        flash("No friend connection found.", "danger")
-        return redirect(url_for('profile'))
+        # Return an error message in JSON format
+        return jsonify({'status': 'error', 'message': "No friend connection found."}), 400
 
     db.session.delete(friend_request)
-
     db.session.commit()
-    flash('Friend removed successfully.', 'success')
-    return redirect(url_for('profile'))
+
+    # Return a success message in JSON format
+    return jsonify({'status': 'success', 'message': 'Friend removed successfully.', 'friendId': friend_id})
 
 
 
